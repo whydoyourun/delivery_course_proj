@@ -1,7 +1,7 @@
 const Router = require('express')
 const router = new Router()
 
-const menuRouter = require('../controllers/menuController')
+const menuRouter = require('../controllers/menuItemController')
 
 router.post('/',menuRouter.add)
 router.get('/',menuRouter.getSorted)
