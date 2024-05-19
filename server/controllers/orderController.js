@@ -1,16 +1,88 @@
+const ApiError = require('../error/ApiError');
+const { Order, OrderItem } = require('../models/models');
+
 class OrderController {
-  async add(req,res){
-  
+
+  // add заказ
+  async addOrder(req, res, next) {
+    try {
+      const { userId, totalPrice, status } = req.body;
+      if(!userId||!totalPrice||!status){
+        return next(ApiError.badRequest('Не переданы все параметры для создания заказа'));
+      }
+      const order = await Order.create({ userId, totalPrice, status });
+      return res.json(order);
+    } catch (error) {
+      next(ApiError.internal('Непредвиденная ошибка сервера: ' + error.message));
+    }
   }
-  
-  async getOne(req,res){
-  
+  // add позицию в заказ
+  async addItemInOrder(req, res, next) {
+    try {
+      const { orderId, menuItemId, quantity } = req.body;
+      if(!orderId||!menuItemId||!quantity){
+        return next(ApiError.badRequest('Не переданы все параметры для добавления позиции в заказ'));
+      }
+      const orderItem = await OrderItem.create({ Order_Id: orderId, menuItemId, quantity });
+      return res.json(orderItem);
+    } catch (error) {
+      next(ApiError.internal('Непредвиденная ошибка сервера: ' + error.message));
+    }
   }
-  
-  async delete(req,res){
-  
+  //get заказ по id
+  async getOrderById(req, res, next) {
+    try {
+      const { id } = req.params;
+      const order = await Order.findByPk(id);
+      if (!order) {
+        return next(ApiError.badRequest('Заказ не найден'));
+      }
+      return res.json(order);
+    } catch (error) {
+      next(ApiError.internal('Непредвиденная ошибка сервера: ' + error.message));
+    }
   }
-  
+  // get позиции по id заказа
+  async getOrderItemsByOrderId(req, res, next) {
+    try {
+      const { orderId } = req.params;
+      const orderItems = await OrderItem.findAll({ where: { Order_Id: orderId } });
+      return res.json(orderItems);
+    } catch (error) {
+      next(ApiError.internal('Непредвиденная ошибка сервера: ' + error.message));
+    }
   }
-  
-  module.exports = new OrderController()
+  //delete заказ
+  async deleteOrder(req, res, next) {
+    try {
+      const { id } = req.params;
+      const deletedOrderCount = await Order.destroy({ where: { id } });
+      if (!deletedOrderCount) {
+        return next(ApiError.badRequest('Заказ не найден'));
+      }
+      return res.json({ message: 'Заказ успешно удален' });
+    } catch (error) {
+      next(ApiError.internal('Непредвиденная ошибка сервера: ' + error.message));
+    }
+  }
+  //delete позицию из заказа
+  async deleteOrderItem(req, res, next) {
+    try {
+      const { id } = req.params;
+      if (!id) {
+        return next(ApiError.badRequest('неверный id / id не найден'));
+      }
+      const deletedOrderItemCount = await OrderItem.destroy({ where: { id } });
+      if (!deletedOrderItemCount) {
+        return next(ApiError.badRequest('Элемент заказа не найден'));
+      }
+      return res.json({ message: 'Элемент заказа успешно удален' });
+    } catch (error) {
+      next(ApiError.internal('Непредвиденная ошибка сервера: ' + error.message));
+    }
+  }
+
+
+}
+
+module.exports = new OrderController();

@@ -12,9 +12,10 @@ class MenuItemController {
         return res.json(menuItem);
 
       } catch (error) {
-        next(ApiError.internal('Непредвиденная ошибка сервера'));
+        next(ApiError.internal('Непредвиденная ошибка сервера' +  error.message));
       }
     }
+
   
   async getSorted(req,res){
   
@@ -23,26 +24,30 @@ class MenuItemController {
   async getById(req, res, next) {
    const { id } = req.params;
    try {
-     const menuItem = await MenuItem.findById(id);
+     const menuItem = await MenuItem.findByPk(id);
      if (!menuItem) {
-       return next(ApiError.notFound('Элемент меню не найден'));
+       return next(ApiError.badRequest('Элемент меню не найден'));
      }
      return res.json(menuItem);
    } catch (error) {
-     next(ApiError.internal('Непредвиденная ошибка сервера'));
+     next(ApiError.internal('Непредвиденная ошибка сервера'+  error.message));
    }
  }
 
  async delete(req, res, next) {
    const { id } = req.params;
+   console.log(id);
    try {
-     const menuItem = await MenuItem.findByIdAndDelete(id);
+     const menuItem = await MenuItem.destroy({
+      where: {
+        id: id
+      }})
      if (!menuItem) {
-       return next(ApiError.notFound('Элемент меню не найден'));
+       return next(ApiError.badRequest('Элемент меню не найден'));
      }
      return res.json({ message: 'Элемент меню успешно удален' });
    } catch (error) {
-     next(ApiError.internal('Непредвиденная ошибка сервера'));
+     next(ApiError.internal('Непредвиденная ошибка сервера' + error.message));
    }
  }
   
