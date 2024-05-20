@@ -1,7 +1,6 @@
 import { Button, Input, Layout, List, Menu, Modal, message } from 'antd';
 import React, { useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
-import Footer_comp from '../components/Footer';
+import LoginModule from '../components/LoginModule';
 import Menu_comp from '../components/Menu';
 
 const { Header, Content } = Layout;
@@ -101,26 +100,6 @@ const HomePage = () => {
     }
   };
 
-  const CartItems = () => {
-    if (cartItems.length === 0) {
-      return <p>Корзина пуста</p>;
-    }
-  
-    return (
-      <List
-        dataSource={cartItems}
-        renderItem={(item) => (
-          <List.Item>
-            {/* Здесь отобразите информацию о товаре */}
-          </List.Item>
-        )}
-      />
-    );
-  };
-
-
-  //cart 
-
   const products = [
     { id: 1, name: 'Товар 1', price: 10 },
     { id: 2, name: 'Товар 2', price: 20 },
@@ -163,12 +142,6 @@ const HomePage = () => {
     setCartItems(updatedCartItems);
   };
 
-
-
-
-  //cart end
-
-
   return (
     <Layout>
       <Header>
@@ -183,9 +156,7 @@ const HomePage = () => {
           <Menu.Item>
             <Button onClick={handleChatClick}>Чат</Button>
           </Menu.Item>
-          <Menu.Item style={{ fontSize: '20px' }}>
-          <Link to="/profile">Аккаунт</Link>
-          </Menu.Item>
+          <LoginModule isLoggedIn={false} /> {/* Добавление компонента LoginModule */}
         </Menu>
       </Header>
       <Content>
@@ -205,7 +176,6 @@ const HomePage = () => {
           <Menu_comp pizzas={pizzas} menuName={'Напитки'} />
         </div>
       </Content>
-      <Footer_comp></Footer_comp>
       <Modal
         title="Чат садминистратором"
         visible={isChatOpen}

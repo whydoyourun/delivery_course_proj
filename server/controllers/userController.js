@@ -58,17 +58,14 @@ class UserController {
 
   async check(req, res, next) {
     try {
-      const { id } = req.query;
-      if (!id) {
-        return next(ApiError.badRequest('не задан ID пользователя'));
-      } else {
-        const message = `Вы запросили ${id}`;
-        return res.status(200).json({ message });
+      const token = generateJWT(req.user.id, req.user.email, req.user.role)
+      return res.json({token})
       }
-    } catch (error) {
+     catch (error) {
       next(ApiError.internal('Непредвиденная ошибка сервера: ' + error.message));
     }
   }
 }
+
 
 module.exports = new UserController();

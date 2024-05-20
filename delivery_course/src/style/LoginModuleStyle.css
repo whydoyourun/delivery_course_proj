@@ -1,0 +1,21 @@
+.blue-text {
+  color: blue;
+  transition: color 0.3s ease;
+}
+
+.login-button {
+  margin-right: 8px;
+}
+
+.profile-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.login-modai-item {
+  margin-top: 5px;
+}
+
+.pointer-cursor {
+  cursor: pointer;
+}

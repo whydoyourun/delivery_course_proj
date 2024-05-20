@@ -1,11 +1,12 @@
 const Router = require('express')
 const router = new Router()
+const roleCheck = require('../middleware/RoleCheckMiddleware');
 
-const menuRouter = require('../controllers/menuItemController')
+const menuController = require('../controllers/menuItemController')
 
-router.post('/',menuRouter.add)
-router.get('/',menuRouter.getSorted)
-router.get('/:id',menuRouter.getById)
-router.delete('/:id',menuRouter.delete)
+router.post('/',roleCheck('ADMIN'),  menuController.add)
+router.get('/',menuController.getSorted)
+router.get('/:id',menuController.getById)
+router.delete('/:id',menuController.delete)
 
 module.exports = router

@@ -1,3 +1,5 @@
+//почему-то когда ставлю стили через .css все ломается 
+
 import { Button, Form, Input, Layout, Menu, Modal, message } from 'antd';
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -77,6 +79,7 @@ const Profile = () => {
       <div>
 <h1>Личный кабинет</h1>
 <Button onClick={handleEditProfile}>Редактировать профиль</Button>
+<Button onClick={handleEditProfile}>Выйти </Button>
 <Modal
 title="Редактировать профиль"
 visible={isModalVisible}
