@@ -98,6 +98,9 @@ const Profile = () => {
               <Button>
                 <Link to="/admin/users">пользователи</Link>
               </Button>
+              <Button>
+                <Link to="/admin/mail">уведомления</Link>
+              </Button>
             </div>
           )}
           <Modal

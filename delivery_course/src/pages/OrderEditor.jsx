@@ -209,8 +209,9 @@ const OrderEditor = () => {
               rules={[{ required: true, message: 'Please select the status!' }]}
             >
               <Select>
-                <Option value="pending">Pending</Option>
-                <Option value="shipped">Shipped</Option>
+                <Option value="pending">ожидание</Option>
+                <Option value="shipped">доставлен</Option>
+                <Option value="cancelled">отменен</Option>
               </Select>
             </Form.Item>
             <Form.Item label="Order Items">

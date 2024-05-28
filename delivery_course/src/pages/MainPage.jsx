@@ -1,5 +1,5 @@
-import { Button, Input, Layout, List, Menu, Modal, message } from 'antd';
 import React, { useRef, useState } from 'react';
+import { Button, Input, Layout, List, Menu, Modal, message } from 'antd';
 import LoginModule from '../components/LoginModule';
 import Menu_comp from '../components/Menu';
 
@@ -19,6 +19,8 @@ const HomePage = () => {
     { id: 2, text: 'Здравствуйте! Вы можете выбрать блюда из нашего меню и добавить их в корзину.', sender: 'admin' },
     { id: 3, text: 'Спасибо за ответ! Я сейчас посмотрю меню.', sender: 'user' },
   ]);
+
+  const [filter, setFilter] = useState(''); // Состояние для хранения значения фильтра
 
   const handleChatClick = () => {
     setIsChatOpen(!isChatOpen);
@@ -142,6 +144,49 @@ const HomePage = () => {
     setCartItems(updatedCartItems);
   };
 
+  const pizzas = [
+    {
+      id: 1,
+      name: "Пепперони-делюкс",
+      image: 'https://img.freepik.com/free-photo/thinly-sliced-pepperoni-is-popular-pizza-topping-american-style-pizzerias-isolated-white-background-still-life_639032-229.jpg?t=st=1715517267~exp=1715520867~hmac=9d25351ec4a1bec23df195d7582d1a68525e50fc042e30d7fed45080401901d9&w=740',
+      priceLarge: 12.99,
+      priceStandard: 9.99,
+      description:'пепперони, халапеньо, моцарелла, соус'
+    },
+    {
+      id: 2,
+      name: "Пепперони",
+      image: 'https://img.freepik.com/free-photo/thinly-sliced-pepperoni-is-popular-pizza-topping-american-style-pizzerias-isolated-white-background-still-life_639032-229.jpg?t=st=1715517267~exp=1715520867~hmac=9d25351ec4a1bec23df195d7582d1a68525e50fc042e30d7fed45080401901d9&w=740',
+      priceLarge: 12.99,
+      priceStandard: 9.99,
+      description:'пепперони, халапеньо, моцарелла, соус'
+    },
+    {
+      id: 3,
+      name: "Бургин",
+      image: 'https://img.freepik.com/free-photo/thinly-sliced-pepperoni-is-popular-pizza-topping-american-style-pizzerias-isolated-white-background-still-life_639032-229.jpg?t=st=1715517267~exp=1715520867~hmac=9d25351ec4a1bec23df195d7582d1a68525e50fc042e30d7fed45080401901d9&w=740',
+      priceLarge: 12.99,
+      priceStandard: 9.99,
+      description:'пепперони, халапеньо, моцарелла, соус'
+    },
+    {
+      id: 4,
+      name: "Спрайт 0.5",
+      image: 'https://img.freepik.com/free-photo/thinly-sliced-pepperoni-is-popular-pizza-topping-american-style-pizzerias-isolated-white-background-still-life_639032-229.jpg?t=st=1715517267~exp=1715520867~hmac=9d25351ec4a1bec23df195d7582d1a68525e50fc042e30d7fed45080401901d9&w=740',
+      priceLarge: 12.99,
+      priceStandard: 9.99,
+      description:'пепперони, халапеньо, моцарелла, соус'
+    },
+    {
+      id: 5,
+      name: "Спрайт 1",
+      image: 'https://img.freepik.com/free-photo/thinly-sliced-pepperoni-is-popular-pizza-topping-american-style-pizzerias-isolated-white-background-still-life_639032-229.jpg?t=st=1715517267~exp=1715520867~hmac=9d25351ec4a1bec23df195d7582d1a68525e50fc042e30d7fed45080401901d9&w=740',
+      priceLarge: 12.99,
+      priceStandard: 9.99,
+      description:'пепперони, халапеньо, моцарелла, соус'
+    },
+  ];
+
   return (
     <Layout>
       <Header>
@@ -158,26 +203,32 @@ const HomePage = () => {
           </Menu.Item>
           <LoginModule isLoggedIn={false} /> {/* Добавление компонента LoginModule */}
         </Menu>
+        <Input
+          placeholder="Введите название продукта"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          style={{ width: 200, marginTop: 10, marginLeft: 20 }}
+        />
       </Header>
       <Content>
         <div ref={pizzasRef}>
-          <Menu_comp pizzas={pizzas} menuName={'Пицца'} />
+          <Menu_comp pizzas={pizzas.filter(pizza => pizza.name.toLowerCase().includes(filter.toLowerCase()))} menuName={'Пицца'} />
         </div>
         <div ref={burgersRef}>
-          <Menu_comp pizzas={pizzas} menuName={'Бургеры'} />
+          <Menu_comp pizzas={pizzas.filter(pizza => pizza.name.toLowerCase().includes(filter.toLowerCase()))} menuName={'Бургеры'} />
         </div>
         <div ref={appetizersRef}>
-          <Menu_comp pizzas={pizzas} menuName={'Закуски'} />
+          <Menu_comp pizzas={pizzas.filter(pizza => pizza.name.toLowerCase().includes(filter.toLowerCase()))} menuName={'Закуски'} />
         </div>
         <div ref={dessertsRef}>
-          <Menu_comp pizzas={pizzas} menuName={'Дессерты'} />
+          <Menu_comp pizzas={pizzas.filter(pizza => pizza.name.toLowerCase().includes(filter.toLowerCase()))} menuName={'Дессерты'} />
         </div>
         <div ref={drinksRef}>
-          <Menu_comp pizzas={pizzas} menuName={'Напитки'} />
+          <Menu_comp pizzas={pizzas.filter(pizza => pizza.name.toLowerCase().includes(filter.toLowerCase()))} menuName={'Напитки'} />
         </div>
       </Content>
       <Modal
-        title="Чат садминистратором"
+        title="Чат с администратором"
         visible={isChatOpen}
         onCancel={handleChatModalClose}
         footer={[
@@ -207,80 +258,34 @@ const HomePage = () => {
         />
       </Modal>
       <Modal
-  title="Корзина"
-  visible={isCartOpen}
-  onCancel={handleCartClose}
-  footer={[
-    <Button key="orderButton" type="primary" onClick={handleOrder}>
-      Оформить заказ
-    </Button>,
-  ]}
->
-  {cartItems.length === 0 ? (
-    <p>Корзина пуста</p>
-  ) : (
-    <List
-      dataSource={cartItems}
-      renderItem={(item) => (
-        <List.Item>
-          <CartItem
-            item={item}
-            onIncreaseQuantity={handleIncreaseQuantity}
-            onDecreaseQuantity={handleDecreaseQuantity}
+        title="Корзина"
+        visible={isCartOpen}
+        onCancel={handleCartClose}
+        footer={[
+          <Button key="orderButton" type="primary" onClick={handleOrder}>
+            Оформить заказ
+          </Button>,
+        ]}
+      >
+        {cartItems.length === 0 ? (
+          <p>Корзина пуста</p>
+        ) : (
+          <List
+            dataSource={cartItems}
+            renderItem={(item) => (
+              <List.Item>
+                <CartItem
+                  item={item}
+                  onIncreaseQuantity={handleIncreaseQuantity}
+                  onDecreaseQuantity={handleDecreaseQuantity}
+                />
+              </List.Item>
+            )}
           />
-        </List.Item>
-      )}
-    />
-  )}
-</Modal>
+        )}
+      </Modal>
     </Layout>
   );
 };
 
 export default HomePage;
-
-
-const pizzas = [
-  {
-    name: "Пепперони",
-    image: 'https://img.freepik.com/free-photo/thinly-sliced-pepperoni-is-popular-pizza-topping-american-style-pizzerias-isolated-white-background-still-life_639032-229.jpg?t=st=1715517267~exp=1715520867~hmac=9d25351ec4a1bec23df195d7582d1a68525e50fc042e30d7fed45080401901d9&w=740',
-    priceLarge: 12.99,
-    priceStandard: 9.99,
-    description:'пепперони, халапеньо, моцарелла, соус'
-  },
-  {
-    name: "Пепперони",
-    image: 'https://img.freepik.com/free-photo/thinly-sliced-pepperoni-is-popular-pizza-topping-american-style-pizzerias-isolated-white-background-still-life_639032-229.jpg?t=st=1715517267~exp=1715520867~hmac=9d25351ec4a1bec23df195d7582d1a68525e50fc042e30d7fed45080401901d9&w=740',
-    priceLarge: 12.99,
-    priceStandard: 9.99,
-    description:'пепперони, халапеньо, моцарелла, соус'
-  },
-  {
-    name: "Пепперони",
-    image: 'https://img.freepik.com/free-photo/thinly-sliced-pepperoni-is-popular-pizza-topping-american-style-pizzerias-isolated-white-background-still-life_639032-229.jpg?t=st=1715517267~exp=1715520867~hmac=9d25351ec4a1bec23df195d7582d1a68525e50fc042e30d7fed45080401901d9&w=740',
-    priceLarge: 12.99,
-    priceStandard: 9.99,
-    description:'пепперони, халапеньо, моцарелла, соус'
-  },
-  {
-    name: "Пепперони",
-    image: 'https://img.freepik.com/free-photo/thinly-sliced-pepperoni-is-popular-pizza-topping-american-style-pizzerias-isolated-white-background-still-life_639032-229.jpg?t=st=1715517267~exp=1715520867~hmac=9d25351ec4a1bec23df195d7582d1a68525e50fc042e30d7fed45080401901d9&w=740',
-    priceLarge: 12.99,
-    priceStandard: 9.99,
-    description:'пепперони, халапеньо, моцарелла, соус'
-  },
-  {
-    name: "Пепперони",
-    image: 'https://img.freepik.com/free-photo/thinly-sliced-pepperoni-is-popular-pizza-topping-american-style-pizzerias-isolated-white-background-still-life_639032-229.jpg?t=st=1715517267~exp=1715520867~hmac=9d25351ec4a1bec23df195d7582d1a68525e50fc042e30d7fed45080401901d9&w=740',
-    priceLarge: 12.99,
-    priceStandard: 9.99,
-    description:'пепперони, халапеньо, моцарелла, соус'
-  },
-  {
-    name: "Пепперони",
-    image: 'https://img.freepik.com/free-photo/thinly-sliced-pepperoni-is-popular-pizza-topping-american-style-pizzerias-isolated-white-background-still-life_639032-229.jpg?t=st=1715517267~exp=1715520867~hmac=9d25351ec4a1bec23df195d7582d1a68525e50fc042e30d7fed45080401901d9&w=740',
-    priceLarge: 12.99,
-    priceStandard: 9.99,
-    description:'пепперони, халапеньо, моцарелла, соус'
-  },
-];

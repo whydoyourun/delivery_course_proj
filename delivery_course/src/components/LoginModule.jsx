@@ -1,9 +1,10 @@
-import { Button, Input, Menu, Modal } from 'antd';
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Button, Input, Menu, Modal } from 'antd';
 import '../style/LoginModuleStyle.css';
+import ForgotPasswordModal from './ForgotPasswordModal'; // Импортируем компонент ForgotPasswordModal
 
-const LoginModal = ({ visible, onLogin, onRegister, onCancel }) => {
+const LoginModal = ({ visible, onLogin, onRegister, onCancel, onForgotPassword }) => { // Добавляем пропс onForgotPassword
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoginMode, setIsLoginMode] = useState(true);
@@ -44,9 +45,14 @@ const LoginModal = ({ visible, onLogin, onRegister, onCancel }) => {
         onChange={(e) => setPassword(e.target.value)}
         className='login-modai-item'
       />
-      <Button type="primary" onClick={handleSubmit} className='login-modai-item'>
-        {isLoginMode ? 'Войти' : 'Зарегистрироваться'}
-      </Button>
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <Button type="primary" onClick={handleSubmit} className='login-modai-item'>
+          {isLoginMode ? 'Войти' : 'Зарегистрироваться'}
+        </Button>
+        <Button type="link" className='login-modai-item' onClick={onForgotPassword}> {/* Добавляем onClick для вызова onForgotPassword */}
+          Забыли пароль?
+        </Button>
+      </div>
       <p
         onClick={toggleMode}
         className={`${hovered ? 'blue-text pointer-cursor' : ''}`}
@@ -62,6 +68,7 @@ const LoginModal = ({ visible, onLogin, onRegister, onCancel }) => {
 const LoginModule = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false); // Добавляем состояние для отображения ForgotPasswordModal
 
   const handleLogin = (email, password) => {
     // Здесь будет логика для аутентификации пользователя
@@ -79,6 +86,10 @@ const LoginModule = () => {
     setShowModal(!showModal);
   };
 
+  const toggleForgotPasswordModal = () => { // Функция для отображения/скрытия ForgotPasswordModal
+    setShowForgotPasswordModal(!showForgotPasswordModal);
+  };
+
   return (
     <Menu.Item>
       {isLoggedIn ? (
@@ -87,12 +98,21 @@ const LoginModule = () => {
         <Button onClick={toggleModal} className="login-button">Войти</Button>
       )}
       {!isLoggedIn && (
-        <LoginModal
-          visible={showModal}
-          onLogin={handleLogin}
-          onRegister={handleRegister}
-          onCancel={toggleModal}
-        />
+        <>
+          <LoginModal
+            visible={showModal}
+            onLogin={handleLogin}
+            onRegister={handleRegister}
+            onCancel={toggleModal}
+            onForgotPassword={toggleForgotPasswordModal} // Передаем функцию для открытия ForgotPasswordModal
+          />
+          {showForgotPasswordModal && ( // Показываем ForgotPasswordModal, если showForgotPasswordModal true
+            <ForgotPasswordModal
+              visible={showForgotPasswordModal}
+              onCancel={toggleForgotPasswordModal}
+            />
+          )}
+        </>
       )}
     </Menu.Item>
   );
