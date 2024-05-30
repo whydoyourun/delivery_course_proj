@@ -10,9 +10,9 @@ const generateJWT = (id, email, role) => {
 class UserController {
   async registration(req, res, next) {
     try {
-      const { email, name, password, role, phoneNumber } = req.body;
-      if(!email||!name||!password||!role||!phoneNumber){
-        return next(ApiError.badRequest('Не переданы все параметры для регистрации пользователя')); 
+      const { email, name = null, password, role = 'USER', phoneNumber = null } = req.body;
+      if(!email || !password){
+        return next(ApiError.badRequest('Не указан email или пароль')); 
       }
 
       const candidate =  await User.findOne({where:{email}})
@@ -35,7 +35,7 @@ class UserController {
     try {
       const {email,password} = req.body;
       if(!email||!password){
-        return next(ApiError.badRequest('Не переданы email или password при логине')); 
+        return next(ApiError.badRequest('Не указан email или пароль')); 
       }
       const user = await User.findOne({where:{email}});
       if(!user){
@@ -51,6 +51,24 @@ class UserController {
       const token = generateJWT(user.id, user.email, user.role)
 
       return res.status(200).json({token});
+    } catch (error) {
+      next(ApiError.internal('Непредвиденная ошибка сервера: ' + error.message));
+    }
+  }
+
+  async getUserById(req, res, next) {
+    try {
+      const { id } = req.user; // Получаем id пользователя из декодированного JWT токена
+      const user = await User.findOne({
+        where: { id },
+        attributes: ['id', 'email', 'name', 'password', 'phoneNumber','role']
+      });
+  
+      if (!user) {
+        return next(ApiError.notFound('Пользователь не найден'));
+      }
+  
+      return res.status(200).json(user);
     } catch (error) {
       next(ApiError.internal('Непредвиденная ошибка сервера: ' + error.message));
     }

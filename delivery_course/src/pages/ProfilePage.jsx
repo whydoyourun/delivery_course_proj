@@ -1,39 +1,10 @@
 import { Button, Form, Input, Layout, Menu, Modal, message } from 'antd';
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Footer_comp from '../components/Footer';
+import middleware from '../middleware/middleware';
 
 const { Header, Content } = Layout;
-
-// Объекты данных
-const user = {
-  name: '',
-  email: 'ivan@example.com',
-  password: '123456',
-  phone: '',
-  role: 'admin', // Добавим поле роли
-};
-
-const orderHistory = [
-  {
-    id: 1,
-    items: ['Товар 1', 'Товар 2', 'Товар 3'],
-    total: 100,
-    status: 'Доставлен',
-  },
-  {
-    id: 2,
-    items: ['Товар 4', 'Товар 5'],
-    total: 50,
-    status: 'Отменен',
-  },
-  {
-    id: 3,
-    items: ['Товар 6'],
-    total: 20,
-    status: 'Доставлен',
-  },
-];
 
 const currentOrder = {
   id: 4,
@@ -43,25 +14,72 @@ const currentOrder = {
 };
 
 const Profile = () => {
+  const [form] = Form.useForm();
+  const [user, setUser] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [password, setPassword] = useState(user.password);
-  const [name, setName] = useState(user.name);
-  const [email, setEmail] = useState(user.email);
-  const [phone, setPhone] = useState(user.phone);
+  const [password, setPassword] = useState('********');
+  const [name, setName] = useState(user?.name || 'не указано');
+  const [email, setEmail] = useState(user?.email || 'не указано');
+  const [phone, setPhone] = useState(user?.email || 'не указано');
+  const [role, setRole] = useState(user?.role || 'USER');
+  const [orderHistory, setOrderHistory] = useState([]);
+  const [currentOrder,setCurrentOrder] = useState({});
 
-  const handleCancelOrder = () => {
-    // Отменить текущий заказ
-    message.success('Заказ отменен');
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const userInfo = await middleware.fetchUserInfo();
+        const orders = await middleware.getAllOrdersByUserId();
+        const currentOrders = await middleware.getAllInProcessByUserId();
+        setUser(userInfo);
+        setName(userInfo.name || 'не указано');
+        setEmail(userInfo.email || 'не указано');
+        setPhone(userInfo.phoneNumber || 'не указано');
+        setRole(userInfo.role || 'USER');
+        setOrderHistory(orders);
+        setCurrentOrder(currentOrders);
+      } catch (error) {
+        console.error('Error fetching user info:', error);
+      }
+    };
+
+    fetchUserInfo();
+  }, []);
+
+  const handleCancelOrder = async () => {
+    try {
+      await middleware.cancelOrder(currentOrder.id);
+      const currentOrders = await middleware.getAllInProcessByUserId();
+      setCurrentOrder(currentOrders);
+      const orders = await middleware.getAllOrdersByUserId();
+      setOrderHistory(orders);
+    } catch (error) {
+      message.error(`Ошибка отмены заказа: ${error.message}`);
+    }
+    message.success('Заказ успешно отменен');
+    
   };
 
   const handleEditProfile = () => {
     setIsModalVisible(true);
   };
 
+  const handleLogout = () => {
+
+    localStorage.clear();
+  
+    window.location.href = 'http://localhost:3000';
+  };
+
   const handleSaveProfile = () => {
-    // Сохранить изменения профиля
-    setIsModalVisible(false);
-    message.success('Изменения сохранены');
+    form.validateFields().then((values) => {
+      console.log('Received values:', values);
+      // Сохранить изменения профиля
+      setIsModalVisible(false);
+      message.success('Изменения сохранены');
+    }).catch((errorInfo) => {
+      console.log('Validation failed:', errorInfo);
+    });
   };
 
   return (
@@ -71,18 +89,14 @@ const Profile = () => {
           <Menu.Item style={{ fontSize: '20px' }} key="1">
             <Link to="/">На главную</Link>
           </Menu.Item>
-          <Menu.Item key="6" style={{ marginLeft: 'auto', fontSize: '24px' }}>
-            Корзина
-          </Menu.Item>
-          <Menu.Item style={{ fontSize: '20px' }}>+7 (123) 456-7890</Menu.Item>
         </Menu>
       </Header>
       <Content style={{ padding: '20px', background: '#fff' }}>
         <div>
           <h1>Личный кабинет</h1>
           <Button onClick={handleEditProfile}>Редактировать профиль</Button>
-          <Button onClick={handleEditProfile}>Выйти</Button>
-          {user.role === 'admin' && (
+          <Button onClick={handleLogout}>Выйти</Button>
+          {role === 'ADMIN' && (
             <div>
               <hr />
               <h2>Админ-панель</h2>
@@ -107,38 +121,20 @@ const Profile = () => {
             title="Редактировать профиль"
             visible={isModalVisible}
             onCancel={() => setIsModalVisible(false)}
-            onOk={() => {
-              if (name.trim() === '' || phone.trim() === '') {
-                // Выводим предупреждение, если обязательные поля не заполнены
-                message.warning('Пожалуйста, заполните все обязательные поля');
-              } else {
-                handleSaveProfile();
-              }
-            }}
+            onOk={handleSaveProfile}
           >
-            <Form>
-              <Form.Item label="Имя">
-                <Input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder={name.trim() === '' ? 'Введите имя' : ''}
-                />
+            <Form form={form} layout="vertical">
+              <Form.Item label="Имя" name="name" initialValue={name} rules={[{ required: true, message: 'Пожалуйста, введите имя!' }]}>
+                <Input />
               </Form.Item>
-              <Form.Item label="Email">
-                <Input value={email} onChange={(e) => setEmail(e.target.value)} />
+              <Form.Item label="Email" name="email" initialValue={email} rules={[{ type: 'email', required: true, message: 'Пожалуйста, введите корректный email!' }]}>
+                <Input />
               </Form.Item>
-              <Form.Item label="Пароль">
-                <Input.Password
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
+              <Form.Item label="Пароль" name="password" initialValue={password} rules={[{ required: true, message: 'Пожалуйста, введите пароль!' }]}>
+                <Input.Password />
               </Form.Item>
-              <Form.Item label="Телефон">
-                <Input
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder={phone.trim() === '' ? 'Введите номер телефона' : ''}
-                />
+              <Form.Item label="Телефон" name="phone" initialValue={phone} rules={[{ required: true, message: 'Пожалуйста, введите номер телефона!' }]}>
+                <Input />
               </Form.Item>
             </Form>
           </Modal>
@@ -159,8 +155,7 @@ const Profile = () => {
               }}
             >
               <h3>Заказ #{order.id}</h3>
-              <p>{order.items.join(', ')}</p>
-              <p>Сумма: {order.total}</p>
+              <p>Сумма: {order.totalPrice}</p>
               <p>Статус: {order.status}</p>
             </div>
           ))}
@@ -169,35 +164,41 @@ const Profile = () => {
           <h2>Текущий заказ</h2>
         </div>
         <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <div
-            style={{
-              width: '300px',
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              padding: '16px',
-              margin: '0 10px',
-            }}
-          >
-            <h3>Заказ #{currentOrder.id}</h3>
-            <p>Товары: {currentOrder.items.join(', ')}</p>
-            <p>Сумма: {currentOrder.total}</p>
-            <p>Статус: {currentOrder.status}</p>
-            {currentOrder.status !== 'Доставлен' && (
-              <button
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'red',
-                  cursor: 'pointer',
-                  textDecoration: 'underline',
-                  marginTop: '10px',
-                }}
-                onClick={handleCancelOrder}
-              >
-                Отменить заказ
-              </button>
-            )}
-          </div>
+        {currentOrder ? (
+  <div
+    style={{
+      width: '300px',
+      border: '1px solid #ddd',
+      borderRadius: '4px',
+      padding: '16px',
+      margin: '0 10px',
+    }}
+  >
+    <h3>Заказ #{currentOrder.id}</h3>
+    <p>Сумма: {currentOrder.total}</p>
+    <p>Статус: {currentOrder.status}</p>
+    {currentOrder.status !== 'Доставлен' && (
+      <button
+        style={{
+          background: 'none',
+          border: 'none',
+          color: 'red',
+          cursor: 'pointer',
+          textDecoration: 'underline',
+          marginTop: '10px',
+        }}
+        onClick={handleCancelOrder}
+      >
+        Отменить заказ
+      </button>
+    )}
+  </div>
+) : (
+  <div>
+    <h3>У вас нет активных заказов.</h3>
+  </div>
+)}
+
         </div>
         <Footer_comp></Footer_comp>
       </Content>

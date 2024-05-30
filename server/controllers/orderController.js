@@ -82,6 +82,65 @@ class OrderController {
     }
   }
 
+  //получить все заказы по id пользователя
+  async getAllOrdersByUserId(req, res, next) {
+    try {
+      const userId = req.user.id; // получаем id пользователя из middleware
+      const orders = await Order.findAll({ where: { userId } });
+      return res.json(orders);
+    } catch (error) {
+      next(ApiError.internal('Непредвиденная ошибка сервера: ' + error.message));
+    }
+  }
+
+  async getInProcessOrderByUserId(req, res, next) {
+    try {
+      const userId = req.user.id; // получаем id пользователя из middleware
+      const orders = await Order.findAll({
+        where: {
+          userId,
+          status: 'Готовится'
+        },
+        order: [['createdAt', 'DESC']]
+      });
+      return res.json(orders);
+    } catch (error) {
+      next(ApiError.internal('Непредвиденная ошибка сервера: ' + error.message));
+    }
+  }
+
+  async getLastReadyOrder(req, res, next) {
+    try {
+      const userId = req.user.id;
+      const lastOrder = await Order.findOne({
+        where: {
+          userId,
+          status: 'Готовится'
+        },
+        order: [['id', 'DESC']] // Сортировка по убыванию id
+      });
+      return res.json(lastOrder);
+    } catch (error) {
+      next(ApiError.internal('Непредвиденная ошибка сервера: ' + error.message));
+    }
+  }
+  
+  async cancelOrder(req, res, next) {
+    try {
+      const { id } = req.params;
+      const order = await Order.findByPk(id);
+      if (!order) {
+        return next(ApiError.badRequest('Заказ не найден'));
+      }
+
+      await order.update({ status: 'Отменен' });
+
+      return res.json({ message: 'Заказ успешно отменен' });
+    } catch (error) {
+      next(ApiError.internal('Непредвиденная ошибка сервера: ' + error.message));
+    }
+  }
+
 
 }
 

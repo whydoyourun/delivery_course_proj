@@ -18,9 +18,19 @@ class MenuItemController {
     }
 
   
-  async getSorted(req,res){
-  
-  }
+    async getSorted(req, res, next) {
+      try {
+        const menuItems = await MenuItem.findAll({
+          order: [
+            ['name', 'ASC']
+          ]
+        });
+    
+        return res.json(menuItems);
+      } catch (error) {
+        next(ApiError.internal('Непредвиденная ошибка сервера' + error.message));
+      }
+    }
   
   async getById(req, res, next) {
    const { id } = req.params;

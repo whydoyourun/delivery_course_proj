@@ -11,11 +11,12 @@ const User = sequelize.define('user', {
   },
   email: {
     type: DataTypes.STRING,
-    allowNull: true,
+    allowNull: false,
     unique: true
   },
   name: {
     type: DataTypes.STRING,
+    allwoNull:true,
   },
   password: {
     type: DataTypes.STRING,
@@ -27,7 +28,7 @@ const User = sequelize.define('user', {
   },
   phoneNumber:{
     type: DataTypes.STRING,
-    allwoNull:false
+    allwoNull:true,
   }
 });
 
@@ -78,6 +79,10 @@ const MenuItem = sequelize.define('menu_item', {
   category: {
     type: DataTypes.STRING,
     allowNull: false
+  },
+  image: {
+    type: DataTypes.STRING,
+    allowNull: true
   }
 });
 

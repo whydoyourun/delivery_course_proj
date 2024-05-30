@@ -1,6 +1,7 @@
-import { Button, Card, Col, Divider, Modal, Radio, Row, Typography } from 'antd';
+import { Button, Card, Col, Divider, Modal, Radio, Row, Typography, message } from 'antd';
 import React, { useState } from 'react';
 import '../style/menuStyle.css';
+import middleware from '../middleware/middleware';
 
 const { Title, Text } = Typography;
 
@@ -22,8 +23,15 @@ const Menu = ({ pizzas, menuName }) => {
     setSelectedSize(e.target.value);
   };
 
-  const handleAddToCart = () => {
-    // Добавить выбранную пиццу в корзину с выбранным размером
+  const handleAddToCart = (pizza, size) => {
+    try {
+      const resultId = size === 'standard' ? pizza.id : `${pizza.id}-large`;
+      middleware.addItemToCart(resultId);
+      message.success('Товар успешно добавлен');
+    } catch (e) {
+      message.error('Ошибка добавления товара');
+      console.log(e);
+    }
   };
 
   return (
@@ -48,19 +56,24 @@ const Menu = ({ pizzas, menuName }) => {
                     <>
                       <h3 className="menu-title">{pizza.name}</h3>
                       <h2 className="item-description">{pizza.description}</h2>
-                      <Button className="price-button" type="primary"                        onClick={(e) => {
+                      <Button
+                        className="price-button"
+                        type="primary"
+                        onClick={(e) => {
                           e.stopPropagation(); // Остановить всплытие события клика
-                          handleAddToCart();
-                        }}>
-                        Большая: <span className="price">${pizza.priceLarge}</span>
+                          handleAddToCart(pizza, 'large');
+                        }}
+                      >
+                        Большая: <span className="price">{pizza.price_large}р.</span>
                       </Button>
-                      <Button className="price-button" 
-                      onClick={(e) => {
+                      <Button
+                        className="price-button"
+                        onClick={(e) => {
                           e.stopPropagation(); // Остановить всплытие события клика
-                          handleAddToCart();
-                          }}>
-
-                        Стандартная: <span className="price">${pizza.priceStandard}</span>
+                          handleAddToCart(pizza, 'standard');
+                        }}
+                      >
+                        Стандартная: <span className="price">{pizza.price_normal}р.</span>
                       </Button>
                     </>
                   }
@@ -80,9 +93,19 @@ const Menu = ({ pizzas, menuName }) => {
               <Radio.Button value="standard">Стандартная</Radio.Button>
               <Radio.Button value="large">Большая</Radio.Button>
             </Radio.Group>
-            <Button className="modal-price-button" type="primary"  onClick={handleAddToCart}>
-              Добавить в корзину <span className="price">
-                ${selectedSize === 'standard' ? selectedPizza.priceStandard : selectedPizza.priceLarge}
+            <Button
+              className="modal-price-button"
+              type="primary"
+              onClick={() =>
+                handleAddToCart(selectedPizza, selectedSize)
+              }
+            >
+              Добавить в корзину{' '}
+              <span className="price">
+                {selectedSize === 'standard'
+                  ? selectedPizza.price_normal
+                  : selectedPizza.price_large}
+                р.
               </span>
             </Button>
           </div>

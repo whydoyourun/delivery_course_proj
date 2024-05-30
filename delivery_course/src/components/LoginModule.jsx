@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Button, Input, Menu, Modal } from 'antd';
+import { Button, Input, Menu, Modal, message } from 'antd';
 import '../style/LoginModuleStyle.css';
 import ForgotPasswordModal from './ForgotPasswordModal'; // Импортируем компонент ForgotPasswordModal
+import middleware from '../middleware/middleware';
 
 const LoginModal = ({ visible, onLogin, onRegister, onCancel, onForgotPassword }) => { // Добавляем пропс onForgotPassword
   const [email, setEmail] = useState('');
@@ -70,17 +71,40 @@ const LoginModule = () => {
   const [showModal, setShowModal] = useState(false);
   const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false); // Добавляем состояние для отображения ForgotPasswordModal
 
-  const handleLogin = (email, password) => {
-    // Здесь будет логика для аутентификации пользователя
-    setIsLoggedIn(true);
-    setShowModal(false);
+  const handleLogin = async (email, password) => {
+    try {
+      const userData = {
+        email,
+        password
+      };
+      await middleware.loginUser(userData);
+      setIsLoggedIn(true);
+      setShowModal(false);
+    // Показываем сообщение об успешной авторизации
+    message.success('Вы успешно вошли!');
+  } catch (error) {
+    console.error(error.message);
+    // Показываем сообщение об ошибке авторизации
+    message.error(`Ошибка авторизации: ${error.message}`);
+  }
   };
 
-  const handleRegister = (email, password) => {
-    // Здесь будет логика для регистрации пользователя
-    setIsLoggedIn(true);
-    setShowModal(false);
-  };
+  const handleRegister = async (email, password) => {
+    try {
+      const userData = {
+        email,
+        password
+      };
+      await middleware.registerUser(userData);
+      setIsLoggedIn(true);
+      setShowModal(false);
+      message.success('Вы успешно зарегестрировались!');
+    } catch (error) {
+      console.error(error.message);
+      // Показываем сообщение об ошибке авторизации
+      message.error(`Ошибка регистрации: ${error.message}`);
+    }
+    };
 
   const toggleModal = () => {
     setShowModal(!showModal);
@@ -92,12 +116,12 @@ const LoginModule = () => {
 
   return (
     <Menu.Item>
-      {isLoggedIn ? (
+      {localStorage.getItem('jwt') ? (
         <Link to="/profile" className="profile-link">Профиль</Link>
       ) : (
         <Button onClick={toggleModal} className="login-button">Войти</Button>
       )}
-      {!isLoggedIn && (
+      {!localStorage.getItem('jwt') && (
         <>
           <LoginModal
             visible={showModal}

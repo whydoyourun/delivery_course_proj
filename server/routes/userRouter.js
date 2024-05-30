@@ -8,6 +8,7 @@ const userController = require('../controllers/userController')
 router.post('/registration',userController.registration)
 router.post('/login',userController.login)
 router.get('/auth',authCheckMiddleware, userController.check)
+router.get('/me', authCheckMiddleware, userController.getUserById);
 router.delete('/',)
 
 module.exports = router

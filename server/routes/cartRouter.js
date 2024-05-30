@@ -2,11 +2,13 @@ const Router = require('express');
 const router = new Router();
 
 const cartController = require('../controllers/cartController');
+const AuthCheckMiddleware = require('../middleware/AuthCheckMiddleware')
 
 router.post('/', cartController.addCart);
-router.post('/items', cartController.addItemInCart);
-router.get('/:userId', cartController.getCartByUserId);
+router.post('/addOne',AuthCheckMiddleware, cartController.addItemInCart);
+//router.get('/:userId', cartController.getCartByUserId);  ломается по имени если разкоментить
 router.get('/items/:cartId', cartController.getItemsByCartId);
+router.get('/itemsByUserId',AuthCheckMiddleware,cartController.getCartItemsByUserId);
 router.delete('/:cartId', cartController.deleteCart);
 router.delete('/items/:itemId', cartController.deleteItemFromCart);
 

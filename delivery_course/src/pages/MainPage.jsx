@@ -1,11 +1,51 @@
-import React, { useRef, useState } from 'react';
-import { Button, Input, Layout, List, Menu, Modal, message } from 'antd';
+import React, { useRef, useState, useEffect } from 'react';
+import {Typography, Button, Input, Layout, List, Menu, Modal, message } from 'antd';
 import LoginModule from '../components/LoginModule';
 import Menu_comp from '../components/Menu';
+import middleware from '../middleware/middleware';
+import Footer_comp from '../components/Footer';
 
 const { Header, Content } = Layout;
+const { Text } = Typography;
 
 const HomePage = () => {
+
+  //pizzazxc
+  const [menuItems, setMenuItems] = useState([]);
+  const [filterr, setFilterr] = useState('');
+
+  useEffect(() => {
+    const fetchPizzaMenu = async () => {
+      try {
+        const fetchedMenuItems = await middleware.fetchMenuItems();
+        setMenuItems(fetchedMenuItems);
+      } catch (error) {
+        console.error('Error fetching items:', error);
+      }
+    };
+
+    fetchPizzaMenu();
+  }, []);
+
+  const filteredMenuItems = menuItems.filter((item) =>
+    item.name.toLowerCase().includes(filterr.toLowerCase())
+  );
+  //
+  function getFilteredMenuItems(items, category) {
+    return items.filter((item) => {
+      if (category) {
+        return item.category === category;
+      } else {
+        return true;
+      }
+    });
+  };
+
+
+
+
+
+
   const pizzasRef = useRef(null);
   const burgersRef = useRef(null);
   const appetizersRef = useRef(null);
@@ -88,6 +128,19 @@ const HomePage = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [cartItems, setCartItems] = useState([]);
 
+  useEffect(() => {
+    async function fetchCartItems() {
+      try {
+        const items = await middleware.getCartItemsByUserId();
+        setCartItems(items);
+      } catch (error) {
+        console.error('Ошибка при получении элементов корзины:', error);
+      }
+    }
+
+    fetchCartItems();
+  }, []);
+
   const handleCartClose = () => {
     setIsCartOpen(false);
   };
@@ -102,25 +155,29 @@ const HomePage = () => {
     }
   };
 
-  const products = [
-    { id: 1, name: 'Товар 1', price: 10 },
-    { id: 2, name: 'Товар 2', price: 20 },
-    { id: 3, name: 'Товар 3', price: 30 },
-  ];
 
-  const CartItem = ({ item, onIncreaseQuantity, onDecreaseQuantity }) => {
-    const { name, price, quantity } = item;
+
+  const CartItem = ({ item, onIncreaseQuantity, onDecreaseQuantity, menuItems }) => {
+    const { menuItemId, quantity } = item;
+  
+    // Найдите товар по его menuItemId в массиве menuItems
+    const menuItem = menuItems?.find(item => item.id === menuItemId);
+  
+    // Если товар найден, получите его название и цену
+    const itemName = menuItem ? menuItem.name : "Название не найдено";
+    const itemPrice = menuItem ? menuItem.price : "Цена не найдена";
   
     return (
-      <div>
-        <span>{name}</span>
-        <span>{price} руб.</span>
-        <button onClick={() => onDecreaseQuantity(item)}>-</button>
-        <span>{quantity}</span>
-        <button onClick={() => onIncreaseQuantity(item)}>+</button>
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
+        <Text>{itemName}</Text>
+        <Text style={{ marginLeft: '10px', marginRight: '10px' }}>{itemPrice} руб.</Text>
+        <Button type="primary" onClick={() => onDecreaseQuantity(item)}>-</Button>
+        <Text style={{ margin: '0 10px' }}>{quantity}</Text>
+        <Button type="primary" onClick={() => onIncreaseQuantity(item)}>+</Button>
       </div>
     );
   };
+  
 
   const handleIncreaseQuantity = (item) => {
     const updatedCartItems = cartItems.map((cartItem) => {
@@ -144,49 +201,6 @@ const HomePage = () => {
     setCartItems(updatedCartItems);
   };
 
-  const pizzas = [
-    {
-      id: 1,
-      name: "Пепперони-делюкс",
-      image: 'https://img.freepik.com/free-photo/thinly-sliced-pepperoni-is-popular-pizza-topping-american-style-pizzerias-isolated-white-background-still-life_639032-229.jpg?t=st=1715517267~exp=1715520867~hmac=9d25351ec4a1bec23df195d7582d1a68525e50fc042e30d7fed45080401901d9&w=740',
-      priceLarge: 12.99,
-      priceStandard: 9.99,
-      description:'пепперони, халапеньо, моцарелла, соус'
-    },
-    {
-      id: 2,
-      name: "Пепперони",
-      image: 'https://img.freepik.com/free-photo/thinly-sliced-pepperoni-is-popular-pizza-topping-american-style-pizzerias-isolated-white-background-still-life_639032-229.jpg?t=st=1715517267~exp=1715520867~hmac=9d25351ec4a1bec23df195d7582d1a68525e50fc042e30d7fed45080401901d9&w=740',
-      priceLarge: 12.99,
-      priceStandard: 9.99,
-      description:'пепперони, халапеньо, моцарелла, соус'
-    },
-    {
-      id: 3,
-      name: "Бургин",
-      image: 'https://img.freepik.com/free-photo/thinly-sliced-pepperoni-is-popular-pizza-topping-american-style-pizzerias-isolated-white-background-still-life_639032-229.jpg?t=st=1715517267~exp=1715520867~hmac=9d25351ec4a1bec23df195d7582d1a68525e50fc042e30d7fed45080401901d9&w=740',
-      priceLarge: 12.99,
-      priceStandard: 9.99,
-      description:'пепперони, халапеньо, моцарелла, соус'
-    },
-    {
-      id: 4,
-      name: "Спрайт 0.5",
-      image: 'https://img.freepik.com/free-photo/thinly-sliced-pepperoni-is-popular-pizza-topping-american-style-pizzerias-isolated-white-background-still-life_639032-229.jpg?t=st=1715517267~exp=1715520867~hmac=9d25351ec4a1bec23df195d7582d1a68525e50fc042e30d7fed45080401901d9&w=740',
-      priceLarge: 12.99,
-      priceStandard: 9.99,
-      description:'пепперони, халапеньо, моцарелла, соус'
-    },
-    {
-      id: 5,
-      name: "Спрайт 1",
-      image: 'https://img.freepik.com/free-photo/thinly-sliced-pepperoni-is-popular-pizza-topping-american-style-pizzerias-isolated-white-background-still-life_639032-229.jpg?t=st=1715517267~exp=1715520867~hmac=9d25351ec4a1bec23df195d7582d1a68525e50fc042e30d7fed45080401901d9&w=740',
-      priceLarge: 12.99,
-      priceStandard: 9.99,
-      description:'пепперони, халапеньо, моцарелла, соус'
-    },
-  ];
-
   return (
     <Layout>
       <Header>
@@ -205,27 +219,28 @@ const HomePage = () => {
         </Menu>
         <Input
           placeholder="Введите название продукта"
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
+          value={filterr}
+          onChange={(e) => setFilterr(e.target.value)}
           style={{ width: 200, marginTop: 10, marginLeft: 20 }}
         />
       </Header>
       <Content>
         <div ref={pizzasRef}>
-          <Menu_comp pizzas={pizzas.filter(pizza => pizza.name.toLowerCase().includes(filter.toLowerCase()))} menuName={'Пицца'} />
+          <Menu_comp pizzas={getFilteredMenuItems(filteredMenuItems,'Пицца')} menuName={'Пицца'} />
         </div>
         <div ref={burgersRef}>
-          <Menu_comp pizzas={pizzas.filter(pizza => pizza.name.toLowerCase().includes(filter.toLowerCase()))} menuName={'Бургеры'} />
+          <Menu_comp pizzas={getFilteredMenuItems(filteredMenuItems,'Бургеры')} menuName={'Бургеры'} />
         </div>
         <div ref={appetizersRef}>
-          <Menu_comp pizzas={pizzas.filter(pizza => pizza.name.toLowerCase().includes(filter.toLowerCase()))} menuName={'Закуски'} />
+          <Menu_comp pizzas={getFilteredMenuItems(filteredMenuItems,'Закуски')} menuName={'Закуски'} />
         </div>
         <div ref={dessertsRef}>
-          <Menu_comp pizzas={pizzas.filter(pizza => pizza.name.toLowerCase().includes(filter.toLowerCase()))} menuName={'Дессерты'} />
+          <Menu_comp pizzas={getFilteredMenuItems(filteredMenuItems,'Десерты')} menuName={'Десерты'} />
         </div>
         <div ref={drinksRef}>
-          <Menu_comp pizzas={pizzas.filter(pizza => pizza.name.toLowerCase().includes(filter.toLowerCase()))} menuName={'Напитки'} />
+          <Menu_comp pizzas={getFilteredMenuItems(filteredMenuItems,'Напитки')} menuName={'Напитки'} />
         </div>
+        <Footer_comp></Footer_comp>
       </Content>
       <Modal
         title="Чат с администратором"
