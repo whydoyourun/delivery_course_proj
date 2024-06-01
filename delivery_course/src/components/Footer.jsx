@@ -79,16 +79,16 @@ const Footer = () => {
               </Title>
               <ul className="footer-link-list">
                 <li>
-                  <a href="/about">О компании</a>
+                  <a >О компании</a>
                 </li>
                 <li>
-                  <a href="/menu">Меню</a>
+                  <a >Меню</a>
                 </li>
                 <li>
-                  <a href="/delivery">Доставка и оплата</a>
+                  <a >Доставка и оплата</a>
                 </li>
                 <li>
-                  <a href="/contact">Контакты</a>
+                  <a >Контакты</a>
                 </li>
               </ul>
             </div>

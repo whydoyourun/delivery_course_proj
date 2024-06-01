@@ -31,7 +31,7 @@ onClick={() => handlePizzaClick(pizza)}
   <h3 className="menu-title">{pizza.name}</h3>
     <h2 className="item-description">{pizza.description}</h2>
       <Button className="price-button" type="primary">
-        Большая: <span className="price">${pizza.price_large}</span>
+        Большая: <span className="price">${pizza.pricelarge}</span>
       </Button>
       <Button className="price-button">
         Стандартная: <span className="price">${pizza.price_normal}</span>

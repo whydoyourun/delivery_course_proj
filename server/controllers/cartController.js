@@ -17,7 +17,7 @@ class CartController {
 
   async addItemInCart(req, res, next) {
     try {
-      const { menuItemId } = req.body;
+      const { menuItemId, size } = req.body;
       const userId = req.user.id;
   
       if (!menuItemId) {
@@ -37,22 +37,27 @@ class CartController {
         });
       }
   
-      let cartItem = await CartItem.findOne({
+      let cartItem = null;
+      const sizeValue = size == 'standard' ? 'стандартная' : 'большая';
+  
+      // Проверяем, есть ли уже позиция с таким menuItemId и размером в корзине
+      const existingCartItems = await CartItem.findAll({
         where: {
           cartId: cart.id,
-          menuItemId
+          menuItemId,
+          size: sizeValue
         }
       });
   
-      if (cartItem) {
-        // Если позиция уже есть в корзине, инкрементируем ее количество
+      if (existingCartItems.length > 0) {
+        cartItem = existingCartItems[0];
         cartItem.quantity += 1;
         await cartItem.save();
       } else {
-        // Если позиции нет в корзине, создаем новую
         cartItem = await CartItem.create({
           cartId: cart.id,
           menuItemId,
+          size: sizeValue,
           quantity: 1
         });
       }
@@ -135,7 +140,65 @@ async getCartItemsByUserId(req, res, next) {
   } catch (error) {
     next(ApiError.internal('Непредвиденная ошибка сервера: ' + error.message));
   }
+
 }
+
+// Метод для увеличения количества товара в корзине
+async incrementCartItemQuantity(req, res, next) {
+  try {
+    const userId = req.user.id;
+    const menuItemId = req.body.menuItemId;
+
+    // Находим корзину пользователя
+    const cart = await Cart.findOne({ where: { userId } });
+
+    // Находим элемент корзины для данного товара
+    const cartItem = await CartItem.findOne({
+      where: {
+        cartId: cart.id,
+        menuItemId
+      }
+    });
+
+    // Увеличиваем количество товара на 1
+    cartItem.quantity++;
+    await cartItem.save();
+
+    return res.json(cartItem);
+  } catch (error) {
+    next(ApiError.internal('Непредвиденная ошибка сервера: ' + error.message));
+  }
+}
+
+// Метод для уменьшения количества товара в корзине
+async decrementCartItemQuantity(req, res, next) {
+  try {
+    const userId = req.user.id;
+    const menuItemId = req.body.menuItemId;
+
+    // Находим корзину пользователя
+    const cart = await Cart.findOne({ where: { userId } });
+
+    // Находим элемент корзины для данного товара
+    const cartItem = await CartItem.findOne({
+      where: {
+        cartId: cart.id,
+        menuItemId
+      }
+    });
+
+    // Уменьшаем количество товара на 1, если оно больше 1
+    if (cartItem.quantity > 1) {
+      cartItem.quantity--;
+      await cartItem.save();
+    }
+
+    return res.json(cartItem);
+  } catch (error) {
+    next(ApiError.internal('Непредвиденная ошибка сервера: ' + error.message));
+  }
+}
+
 
 }
 

@@ -6,18 +6,12 @@ import middleware from '../middleware/middleware';
 
 const { Header, Content } = Layout;
 
-const currentOrder = {
-  id: 4,
-  items: ['Товар 7'],
-  total: 30,
-  status: 'Готовится',
-};
 
 const Profile = () => {
   const [form] = Form.useForm();
   const [user, setUser] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [password, setPassword] = useState('********');
+  const [password, setPassword] = useState('');
   const [name, setName] = useState(user?.name || 'не указано');
   const [email, setEmail] = useState(user?.email || 'не указано');
   const [phone, setPhone] = useState(user?.email || 'не указано');
@@ -31,6 +25,7 @@ const Profile = () => {
         const userInfo = await middleware.fetchUserInfo();
         const orders = await middleware.getAllOrdersByUserId();
         const currentOrders = await middleware.getAllInProcessByUserId();
+        console.log('zxc ' + currentOrders)
         setUser(userInfo);
         setName(userInfo.name || 'не указано');
         setEmail(userInfo.email || 'не указано');
@@ -72,15 +67,27 @@ const Profile = () => {
   };
 
   const handleSaveProfile = () => {
-    form.validateFields().then((values) => {
+    form.validateFields().then(async (values) => {
       console.log('Received values:', values);
-      // Сохранить изменения профиля
+      
+      const { name, email, password, phone } = values; // Получение значений из формы
+  
+      // Обновление состояния компонента
+      setName(name);
+      setEmail(email);
+      setPassword(password);
+      setPhone(phone);
+  
+      // Вызов функции обновления данных пользователя
+      await middleware.updateUserData(name, email, password, phone);
+      
       setIsModalVisible(false);
       message.success('Изменения сохранены');
     }).catch((errorInfo) => {
       console.log('Validation failed:', errorInfo);
     });
   };
+  
 
   return (
     <Layout>
@@ -108,9 +115,6 @@ const Profile = () => {
               </Button>
               <Button>
                 <Link to="/admin/menuItems">Товары</Link>
-              </Button>
-              <Button>
-                <Link to="/admin/users">пользователи</Link>
               </Button>
               <Button>
                 <Link to="/admin/mail">уведомления</Link>

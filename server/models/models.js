@@ -5,32 +5,36 @@ const { DataTypes } = require('sequelize');
 //User
 const User = sequelize.define('user', {
   id: {
-    type: DataTypes.INTEGER,
-    primaryKey: true,
-    autoIncrement: true
+  type: DataTypes.INTEGER,
+  primaryKey: true,
+  autoIncrement: true
   },
   email: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    unique: true
+  type: DataTypes.STRING,
+  allowNull: false,
+  unique: true
   },
   name: {
-    type: DataTypes.STRING,
-    allwoNull:true,
+  type: DataTypes.STRING,
+  allowNull: true,
   },
   password: {
-    type: DataTypes.STRING,
-    allowNull: false
+  type: DataTypes.STRING,
+  allowNull: false
   },
   role: {
-    type: DataTypes.STRING,
-    defaultValue: 'USER'
+  type: DataTypes.STRING,
+  defaultValue: 'USER'
   },
-  phoneNumber:{
-    type: DataTypes.STRING,
-    allwoNull:true,
+  phoneNumber: {
+  type: DataTypes.STRING,
+  allowNull: true,
+  },
+  recovery: {
+  type: DataTypes.STRING,
+  allowNull: true
   }
-});
+  });
 
 //Restaurant
 const Restaurant = sequelize.define('restaurant', {
@@ -119,7 +123,11 @@ const CartItem = sequelize.define('cart_item', {
   quantity: {
     type: DataTypes.INTEGER,
     allowNull: false
-  }
+  },
+  size: {
+    type: DataTypes.STRING,
+    allowNull: true
+    }
 });
 
 //Order
@@ -140,6 +148,14 @@ const Order = sequelize.define('order', {
   status: {
     type: DataTypes.STRING,
     allowNull: false
+  },
+  paymentMethod: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  shippingMethod: {
+    type: DataTypes.STRING,
+    allowNull: true
   }
 });
 
@@ -161,7 +177,11 @@ const OrderItem = sequelize.define('order_item', {
   quantity: {
     type: DataTypes.INTEGER,
     allowNull: false
-  }
+  },
+  size: {
+    type: DataTypes.STRING,
+    allowNull: true
+    }
 });
 
 //Связи

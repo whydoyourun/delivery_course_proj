@@ -1,155 +1,112 @@
-import React, { useState } from 'react';
-import { Layout, Table, Input, Button, Modal, Avatar, List } from 'antd';
-import { Typography } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Input, Button, List, Typography, Tag } from 'antd';
+import ws_middleware from '../middleware/ws_middleware';
 
-const { Header, Content, Sider } = Layout;
-const { Search } = Input;
-const { Title, Paragraph, Text } = Typography;
+const jwt_decode = require('jwt-decode');
 
-// Данные пользователей
-const users = [
-  {
-    id: 1,
-    name: 'John Doe',
-    email: 'john@example.com',
-    chats: [
-      { id: 1, message: 'Hello!', sender: 'John Doe' },
-      { id: 2, message: 'How are you?', sender: 'John Doe' },
-      { id: 3, message: 'I need help with something.', sender: 'you' },
-    ],
-  },
-  {
-    id: 2,
-    name: 'Jane Smith',
-    email: 'jane@example.com',
-    chats: [
-      { id: 1, message: 'Hi there!', sender: 'Jane Smith' },
-      { id: 2, message: 'Can we discuss the project?', sender: 'Jane Smith' },
-      { id: 3, message: 'I have an idea I want to share.', sender: 'Jane Smith' },
-    ],
-  },
-  // Добавьте больше пользователей по мере необходимости
-];
+const { Text } = Typography;
 
 const AdminDashboard = () => {
-  const [filteredUsers, setFilteredUsers] = useState(users);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [message, setMessage] = useState('');
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [webSocketClient, setWebSocketClient] = useState(null);
+  const [connectedUsers, setConnectedUsers] = useState([]);
+  const [userId, setUserId] = useState(null);
 
-  const handleSearch = (value) => {
-    const filtered = users.filter((user) =>
-      user.name.toLowerCase().includes(value.toLowerCase()) ||
-      user.email.toLowerCase().includes(value.toLowerCase())
-    );
-    setFilteredUsers(filtered);
-  };
+  useEffect(() => {
+    // Get the JWT token from localStorage
+    const jwtToken = localStorage.getItem('jwt');
+    if (jwtToken) {
+      // Decode the JWT token to get the user ID
+      const decoded = jwt_decode.jwtDecode(jwtToken);
+      setUserId(decoded.sub);
+    }
 
-  const handleUserClick = (user) => {
-    setSelectedUser(user);
-    setShowModal(true);
-  };
+    // Initialize the WebSocket client
+    const client = new ws_middleware.WebSocketClient();
+    client.connect();
+    setWebSocketClient(client);
+
+    // Handle incoming messages
+    client.ws.onmessage = (event) => {
+      try {
+        const parsedMessage = JSON.parse(event.sender);
+        if (parsedMessage.sender !== userId) {
+          setMessages((prevMessages) => [...prevMessages, parsedMessage]);
+        }
+
+        // Handle different message types
+        if (parsedMessage.type === 'newClient') {
+          // New client connected
+          setConnectedUsers((prevConnectedUsers) => [...prevConnectedUsers, parsedMessage.clientId]);
+        } else if (parsedMessage.type === 'clientDisconnected') {
+          // Client disconnected
+          setConnectedUsers((prevConnectedUsers) =>
+            prevConnectedUsers.filter((userId) => userId !== parsedMessage.clientId)
+          );
+        } else if (parsedMessage.type === 'message') {
+          // New message received
+          // Check if the sender is a new user
+          if (!connectedUsers.includes(parsedMessage.sender)) {
+            setConnectedUsers((prevConnectedUsers) => [...prevConnectedUsers, parsedMessage.sender]);
+          }
+        }
+      } catch (error) {
+        console.error('Error parsing message:', error);
+      }
+    };
+
+    // Clean up the socket connection on component unmount
+    return () => {
+      client.disconnect();
+    };
+  }, [connectedUsers, userId]);
 
   const handleSendMessage = () => {
-    if (selectedUser && message.trim() !== '') {
-      // Добавляем новое сообщение в массив сообщений пользователя
-      const updatedChats = [...selectedUser.chats, { id: selectedUser.chats.length + 1, message, sender: selectedUser.name }];
-      const updatedUser = { ...selectedUser, chats: updatedChats };
-
-      // Обновляем данные пользователя в массиве users
-      const updatedUsers = users.map((user) => (user.id === updatedUser.id ? updatedUser : user));
-      setFilteredUsers(updatedUsers);
-      setSelectedUser(updatedUser);
-
-      // Очищаем поле ввода сообщения
-      setMessage('');
+    if (newMessage.trim() !== '' && webSocketClient) {
+      const messageObj = {
+        type: 'text',
+        id: Date.now(),
+        text: newMessage,
+        sender: userId, // Use the actual sender ID
+      };
+      webSocketClient.sendMessage(JSON.stringify(messageObj));
+      setNewMessage('');
     }
   };
 
-  const handleCloseModal = () => {
-    setShowModal(false);
-  };
-
   return (
-    <Layout>
-      <Header>
-        <Title level={3}>Admin Dashboard</Title>
-      </Header>
-      <Layout>
-        <Sider width="100%" style={{ background: '#fff' }}>
-          <Search placeholder="Search users" onSearch={handleSearch} style={{ padding: '16px' }} />
-          <Table
-            dataSource={filteredUsers}
-            columns={[
-              {
-                title: 'Name',
-                dataIndex: 'name',
-                key: 'name',
-                onCell: (record) => ({
-                  onClick: () => handleUserClick(record),
-                }),
-              },
-              {
-                title: 'Email',
-                dataIndex: 'email',
-                key: 'email',
-              },
-              {
-                title: 'Last Message',
-                dataIndex: 'chats',
-                key: 'lastMessage',
-                render: (chats) => `${chats[chats.length - 1].sender}: ${chats[chats.length - 1].message}`,
-              },
-            ]}
-            pagination={false}
-            rowKey="id"
-            style={{ padding: '16px' }}
-            size="large"
-            bordered
-            scroll={{ x: '100%' }}
-          />
-        </Sider>
-        <Content style={{ padding: '24px' }}>
-          {selectedUser && (
-            <Modal
-              visible={showModal}
-              onCancel={handleCloseModal}
-              footer={[
-                <Button key="send" type="primary" onClick={handleSendMessage}>
-                  Send
-                </Button>,
-                <Button key="close" onClick={handleCloseModal}>
-                  Close
-                </Button>,
-              ]}
-              width="80%"
-              style={{ top: '20px' }}
-            >
-              <Title level={4}>Chat with {selectedUser.name}</Title>
-              <List
-                itemLayout="horizontal"
-                dataSource={selectedUser.chats}
-                renderItem={(item) => (
-                  <List.Item>
-                    <List.Item.Meta
-                      avatar={<Avatar>{item.sender.charAt(0)}</Avatar>}
-                      title={<Text>{item.sender}</Text>}
-                      description={item.message}
-                    />
-                  </List.Item>
-                )}
-              />
-              <Input.TextArea
-                rows={3}
-                placeholder="Type your message..."
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-              />
-            </Modal>
-          )}
-        </Content>
-      </Layout>
-    </Layout>
+    <div style={{ padding: '24px' }}>
+      <h1>Admin Dashboard</h1>
+      <div style={{ marginBottom: '24px' }}>
+        <Text>Connected Users:</Text>{' '}
+        {connectedUsers.map((userId) => (
+          <Tag key={userId} style={{ marginRight: '8px' }}>
+            User {userId}
+          </Tag>
+        ))}
+      </div>
+      <List
+        dataSource={messages}
+        renderItem={(message) => (
+          <List.Item>
+            <Text strong>{`Sender ${message.sender}:`}</Text> {message.text}
+          </List.Item>
+        )}
+        style={{ marginBottom: '24px' }}
+      />
+      <Input.Group compact>
+        <Input
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+          placeholder="Type your message..."
+          style={{ width: 'calc(100% - 100px)' }}
+        />
+        <Button type="primary" onClick={handleSendMessage}>
+          Send
+        </Button>
+      </Input.Group>
+    </div>
   );
 };
 

@@ -1,12 +1,18 @@
 import React, { useRef, useState, useEffect } from 'react';
-import {Typography, Button, Input, Layout, List, Menu, Modal, message } from 'antd';
+import {Typography, Button, Input, Layout, List, Menu, Modal, message,Radio, Divider  } from 'antd';
 import LoginModule from '../components/LoginModule';
 import Menu_comp from '../components/Menu';
 import middleware from '../middleware/middleware';
 import Footer_comp from '../components/Footer';
+import socketIOClient from "socket.io-client";
+import ws_middleware from '../middleware/ws_middleware';
+import io from 'socket.io-client';
+const jwt_decode = require('jwt-decode');
 
 const { Header, Content } = Layout;
 const { Text } = Typography;
+
+const webSocketClient = new ws_middleware.WebSocketClient();
 
 const HomePage = () => {
 
@@ -41,7 +47,18 @@ const HomePage = () => {
     });
   };
 
+//cart 
+const [paymentMethod, setPaymentMethod] = useState('card');
+const [deliveryMethod, setDeliveryMethod] = useState('pickup');
 
+const handlePaymentMethodChange = (e) => {
+  setPaymentMethod(e.target.value);
+};
+
+const handleDeliveryMethodChange = (e) => {
+  setDeliveryMethod(e.target.value);
+};
+//
 
 
 
@@ -54,15 +71,16 @@ const HomePage = () => {
 
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [messageInput, setMessageInput] = useState('');
-  const [chatMessages, setChatMessages] = useState([
-    { id: 1, text: 'Привет! Как мне сделать заказ?', sender: 'user' },
-    { id: 2, text: 'Здравствуйте! Вы можете выбрать блюда из нашего меню и добавить их в корзину.', sender: 'admin' },
-    { id: 3, text: 'Спасибо за ответ! Я сейчас посмотрю меню.', sender: 'user' },
-  ]);
+  const [chatMessages, setChatMessages] = useState([]);
+
+
+
+
 
   const [filter, setFilter] = useState(''); // Состояние для хранения значения фильтра
 
   const handleChatClick = () => {
+    webSocketClient.connect();
     setIsChatOpen(!isChatOpen);
   };
 
@@ -110,16 +128,24 @@ const HomePage = () => {
   };
 
   const handleChatModalClose = () => {
+    webSocketClient.disconnect();
     setIsChatOpen(false);
   };
 
   const handleSendMessage = () => {
     if (messageInput.trim() !== '') {
+      let token = localStorage.getItem('jwt');
+      let user = jwt_decode.jwtDecode(token);
+      console.log(user);
       const newMessage = {
         id: new Date().getTime(),
         text: messageInput,
-        sender: 'user',
+        sender: user.id,
       };
+
+      
+      webSocketClient.sendMessage(JSON.stringify(newMessage));
+
       setChatMessages([...chatMessages, newMessage]);
       setMessageInput('');
     }
@@ -156,20 +182,43 @@ const HomePage = () => {
   };
 
 
-
   const CartItem = ({ item, onIncreaseQuantity, onDecreaseQuantity, menuItems }) => {
-    const { menuItemId, quantity } = item;
+    const { menuItemId, quantity, size } = item;
+
+    
   
     // Найдите товар по его menuItemId в массиве menuItems
     const menuItem = menuItems?.find(item => item.id === menuItemId);
   
     // Если товар найден, получите его название и цену
-    const itemName = menuItem ? menuItem.name : "Название не найдено";
-    const itemPrice = menuItem ? menuItem.price : "Цена не найдена";
+    let itemName = "Название не найдено";
+    let itemPrice = "Цена не найдена";
+  
+    if (menuItem) {
+      itemName = menuItem.name;
+      // В зависимости от размера, выберите соответствующую цену
+      switch (size) {
+        case 'стандартная':
+          itemPrice = menuItem.price_normal;
+          break;
+        case 'большая':
+          itemPrice = menuItem.price_large;
+          break;
+        default:
+          itemPrice = "Цена не указана";
+          break;
+      }
+    }
+  
+    // Добавим отображение размера товара, если тип товара - "Пицца"
+    let sizeText = "";
+    if (menuItem?.category === "Пицца") {
+      sizeText = `(${size})`;
+    }
   
     return (
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
-        <Text>{itemName}</Text>
+        <Text>{itemName} {sizeText}</Text>
         <Text style={{ marginLeft: '10px', marginRight: '10px' }}>{itemPrice} руб.</Text>
         <Button type="primary" onClick={() => onDecreaseQuantity(item)}>-</Button>
         <Text style={{ margin: '0 10px' }}>{quantity}</Text>
@@ -178,8 +227,13 @@ const HomePage = () => {
     );
   };
   
+  
+  
 
   const handleIncreaseQuantity = (item) => {
+    console.log(item.id);
+    middleware.incrementCartItemQuantity(item.id);
+
     const updatedCartItems = cartItems.map((cartItem) => {
       if (cartItem.id === item.id) {
         return { ...cartItem, quantity: cartItem.quantity + 1 };
@@ -191,6 +245,9 @@ const HomePage = () => {
   };
   
   const handleDecreaseQuantity = (item) => {
+
+    middleware.decrementCartItemQuantity(item.id);
+
     const updatedCartItems = cartItems.map((cartItem) => {
       if (cartItem.id === item.id && cartItem.quantity > 1) {
         return { ...cartItem, quantity: cartItem.quantity - 1 };
@@ -201,6 +258,26 @@ const HomePage = () => {
     setCartItems(updatedCartItems);
   };
 
+  const handleCheckout = async () => {
+    const totalPrice = 100; // Рассчитываем общую стоимость заказа
+    try {
+      // Отправляем заказ на сервер
+      const response = await middleware.sendOrderToServer(totalPrice, paymentMethod, deliveryMethod);
+      console.log('Order sent successfully:', response);
+      // Очищаем корзину после успешного оформления заказа
+      // Здесь можно вызвать функцию для очистки корзины, если она доступна из этого компонента
+    } catch (error) {
+      console.error('Error while sending order:', error);
+    }
+  };
+
+  const handleCartClick = async () => {
+    const items = await middleware.getCartItemsByUserId();
+    setCartItems(items);
+  };
+  
+
+
   return (
     <Layout>
       <Header>
@@ -210,7 +287,7 @@ const HomePage = () => {
           <Menu.Item key="3">Закуски</Menu.Item>
           <Menu.Item key="4">Дессерты</Menu.Item>
           <Menu.Item key="5">Напитки</Menu.Item>
-          <Menu.Item key="6" style={{ marginLeft: 'auto', fontSize: '24px' }}>Корзина</Menu.Item>
+          <Menu.Item key="6" style={{ marginLeft: 'auto', fontSize: '24px' }} onClick={handleCartClick}>Корзина</Menu.Item>
           <Menu.Item onClick={handlePhoneMenuItemClick} style={{ fontSize: '20px' }}>+7 (123) 456-7890</Menu.Item>
           <Menu.Item>
             <Button onClick={handleChatClick}>Чат</Button>
@@ -264,7 +341,7 @@ const HomePage = () => {
           renderItem={(item) => (
             <List.Item>
               <List.Item.Meta
-                title={item.sender === 'user' ? 'Вы' : 'Администратор'}
+                title={item.sender === 'user' ? 'Вы' : 'Вы'}
                 description={item.text}
                 style={{ color: item.sender === 'user' ? 'blue' : 'green' }}
               />
@@ -273,32 +350,57 @@ const HomePage = () => {
         />
       </Modal>
       <Modal
-        title="Корзина"
-        visible={isCartOpen}
-        onCancel={handleCartClose}
-        footer={[
-          <Button key="orderButton" type="primary" onClick={handleOrder}>
-            Оформить заказ
-          </Button>,
-        ]}
-      >
-        {cartItems.length === 0 ? (
-          <p>Корзина пуста</p>
-        ) : (
-          <List
-            dataSource={cartItems}
-            renderItem={(item) => (
-              <List.Item>
-                <CartItem
-                  item={item}
-                  onIncreaseQuantity={handleIncreaseQuantity}
-                  onDecreaseQuantity={handleDecreaseQuantity}
-                />
-              </List.Item>
-            )}
-          />
-        )}
-      </Modal>
+title="Корзина"
+visible={isCartOpen}
+onCancel={handleCartClose}
+footer={[
+<Button key="orderButton" type="primary" onClick={handleCheckout}>
+Оформить заказ
+</Button>,
+]}
+>
+{cartItems.length === 0 ? (
+<p>Корзина пуста</p>
+) : (
+<>
+<List
+  dataSource={cartItems}
+  renderItem={(item) => (
+    <List.Item>
+      <CartItem 
+        item={item} 
+        onIncreaseQuantity={handleIncreaseQuantity} 
+        onDecreaseQuantity={handleDecreaseQuantity} 
+        menuItems={menuItems} // Добавлено здесь
+      />
+    </List.Item>
+  )}
+/>
+<Divider />
+<div>
+<h3>Способ оплаты</h3>
+<Radio.Group value={paymentMethod} onChange={handlePaymentMethodChange}>
+<Radio value="card">Картой курьеру</Radio>
+<Radio value="cash">Наличные</Radio>
+</Radio.Group>
+</div>
+<Divider />
+<div>
+<h3>Способ доставки</h3>
+<Radio.Group value={deliveryMethod} onChange={handleDeliveryMethodChange}>
+<Radio value="pickup">Самовывоз</Radio>
+<Radio value="delivery">Доставка</Radio>
+</Radio.Group>
+{deliveryMethod === 'pickup' && (
+<div>
+<Divider />
+<h3>Адрес: Ул. ленина д.13</h3>
+</div>
+)}
+</div>
+</>
+)}
+</Modal>
     </Layout>
   );
 };

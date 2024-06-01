@@ -1,5 +1,7 @@
 const ApiError = require('../error/ApiError');
-const { Order, OrderItem } = require('../models/models');
+const { Order, OrderItem,Cart,CartItem  } = require('../models/models');
+const {Sequelize} = require('sequelize');
+
 
 class OrderController {
 
@@ -86,12 +88,17 @@ class OrderController {
   async getAllOrdersByUserId(req, res, next) {
     try {
       const userId = req.user.id; // получаем id пользователя из middleware
-      const orders = await Order.findAll({ where: { userId } });
+      const orders = await Order.findAll({ 
+        where: { userId },
+        order: [['id', 'DESC']] // сортировка по убыванию даты создания
+      });
       return res.json(orders);
     } catch (error) {
       next(ApiError.internal('Непредвиденная ошибка сервера: ' + error.message));
     }
   }
+
+  
 
   async getInProcessOrderByUserId(req, res, next) {
     try {
@@ -141,6 +148,110 @@ class OrderController {
     }
   }
 
+  //создать ордер на юзере из корзины
+
+  async createOrderFromCart(req, res) {
+    const userId = req.user.id;
+    const { totalPrice, paymentMethod, shippingMethod } = req.body;
+  
+    try {
+
+      const userCart = await Cart.findOne({ where: { userId } });
+      const cartId = userCart.id;
+
+      console.log(userCart.id);
+
+      // Проверяем, есть ли у пользователя активный заказ
+      const activeOrder = await Order.findOne({
+        where: {
+          userId,
+          status: 'Готовится',
+        }
+      });
+  
+      if (activeOrder) {
+        return res.status(400).json({ error: 'У пользователя уже есть активный заказ' });
+      }
+      console.log('qwe1');
+      // Получаем все товары из корзины пользователя
+      const cartItems = await CartItem.findAll({
+        where: {
+          cartId: cartId // Используем явно полученный cartId
+        }
+      });
+  
+      console.log(cartItems);
+
+      // Создаем новый заказ
+      const order = await Order.create({
+        userId,
+        totalPrice,
+        status: 'Готовится',
+        paymentMethod,
+        shippingMethod,
+      });
+      console.log('qwe2');
+      // Перемещаем товары из корзины в новый заказ
+
+
+
+        cartItems.map(async (item) => {
+          console.log(item);
+          await OrderItem.create({
+            Order_Id: order.id,
+            menuItemId: item.menuItemId,
+            quantity: item.quantity,
+            size: item.size,
+          });
+        })
+
+      console.log('qwe3');
+      // Очищаем корзину
+      await CartItem.destroy({
+        where: {
+          cartId: cartId
+        }
+      });
+  
+      return res.status(201).json(order);
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Ошибка при создании заказа' + err });
+    }
+  }
+  
+
+  async getAllOrders(req, res, next) {
+    try {
+      const orders = await Order.findAll({
+        order: [['id', 'DESC']]
+      });
+      return res.json(orders);
+    } catch (error) {
+      next(ApiError.internal('Непредвиденная ошибка сервера: ' + error.message));
+    }
+  }
+
+  async updateOrderStatus(req, res) {
+    const { id, newStatus } = req.body;
+  
+    try {
+      const order = await Order.findByPk(id);
+  
+      if (!order) {
+        return res.status(404).json({ error: 'Заказ не найден' });
+      }
+  
+      order.status = newStatus;
+      await order.save();
+  
+      res.json(order);
+    } catch (error) {
+      console.error('Ошибка при обновлении статуса заказа:', error);
+      res.status(500).json({ error: 'Ошибка при обновлении статуса заказа' });
+    }
+  }
+  
 
 }
 

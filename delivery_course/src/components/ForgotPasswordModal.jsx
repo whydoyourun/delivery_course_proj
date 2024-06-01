@@ -1,32 +1,42 @@
-import { Button, Input, Modal, Form,message } from 'antd';
+import { Button, Input, Modal, Form, message } from 'antd';
 import React, { useState } from 'react';
+import middleware from '../middleware/middleware';
 
 const ForgotPasswordModal = ({ visible, onCancel }) => {
   const [email, setEmail] = useState('');
   const [secretCode, setSecretCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
   const [isSentEmail, setIsSentEmail] = useState(false);
   const [showNewPasswordForm, setShowNewPasswordForm] = useState(false);
   const [isSecretCodeValid, setIsSecretCodeValid] = useState(true);
 
   const handleSubmit = () => {
-    // Здесь будет логика для отправки пароля на email
+    middleware.sendRecoveryCode(email);
     setIsSentEmail(true);
   };
 
-  const handleVerifyCode = () => {
-    // Логика для проверки введённого секретного кода
-    if (secretCode === '1234') {
-      setIsSecretCodeValid(true);
-      setShowNewPasswordForm(true);
-    } else {
-      setIsSecretCodeValid(false);
+  const handleVerifyCode = async () => {
+    try {
+      const response = await middleware.verifyRecoveryCode(email, secretCode);
+      if (response.message === 'Успешно введен секретный код') {
+        setIsSecretCodeValid(true);
+        setShowNewPasswordForm(true);
+      } else {
+        setIsSecretCodeValid(false);
+      }
+    } catch (error) {
+      console.error('Error verifying recovery code:', error);
     }
   };
-
-  const handleSaveNewPassword = () => {
-    // Логика для сохранения нового пароля
-    message.success('Пароль успешно изменен!');
-    onCancel();
+  const handleSaveNewPassword = async () => {
+    try {
+      await middleware.updatePassword(email, newPassword);
+      message.success('Пароль успешно изменен!');
+      onCancel();
+    } catch (error) {
+      console.error('Error updating password:', error.message);
+      // Обработка ошибки, если что-то пошло не так при обновлении пароля
+    }
   };
 
   return (
@@ -77,10 +87,13 @@ const ForgotPasswordModal = ({ visible, onCancel }) => {
               name="newPassword"
               rules={[{ required: true, message: 'Пожалуйста, введите новый пароль' }]}
             >
-              <Input.Password />
+              <Input.Password
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
             </Form.Item>
             <Form.Item>
-            <Button type="primary" htmlType="submit" className="login-modal-item" onClick={handleSaveNewPassword}>
+              <Button type="primary" htmlType="submit" className="login-modal-item" onClick={handleSaveNewPassword}>
                 Сохранить
               </Button>
             </Form.Item>

@@ -2,15 +2,19 @@ const Router = require('express');
 const router = new Router();
 
 const orderController = require('../controllers/orderController');
-const authCheckMiddleware = require('../middleware/AuthCheckMiddleware')
+const authCheckMiddleware = require('../middleware/AuthCheckMiddleware');
+const RoleCheckMiddleware = require('../middleware/RoleCheckMiddleware');
 
 router.post('/add-order', orderController.addOrder);
 router.post('/add-item-in-order', orderController.addItemInOrder);
+router.post('/createFromCart',authCheckMiddleware, orderController.createOrderFromCart);
+router.post('/updateStatus',RoleCheckMiddleware('ADMIN'),orderController.updateOrderStatus);
 router.patch ('/:id/cancel',authCheckMiddleware, orderController.cancelOrder);
 router.get('/zxc/:id', orderController.getOrderById);
 router.get('/:orderId/items', orderController.getOrderItemsByOrderId);
 router.get('/allById', authCheckMiddleware, orderController.getAllOrdersByUserId);
 router.get('/InProcess', authCheckMiddleware, orderController.getLastReadyOrder)
+router.get('/all',orderController.getAllOrders)
 router.delete('/:id', orderController.deleteOrder);
 router.delete('/item/:id', orderController.deleteOrderItem);
 
