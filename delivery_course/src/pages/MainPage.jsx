@@ -7,6 +7,7 @@ import Footer_comp from '../components/Footer';
 import socketIOClient from "socket.io-client";
 import ws_middleware from '../middleware/ws_middleware';
 import io from 'socket.io-client';
+import ChatWidget from '../components/ChatWidget';
 const jwt_decode = require('jwt-decode');
 
 const { Header, Content } = Layout;
@@ -181,6 +182,23 @@ const handleDeliveryMethodChange = (e) => {
     }
   };
 
+  const onDeleteItem = async (item) => {
+
+    console.log(item.id);
+    try {
+      await middleware.deleteCartItem(item.id);
+      const items = await middleware.getCartItemsByUserId();
+      setCartItems(items);
+      message.success('Товар успешно удален из корзины!');
+
+    } catch (error) {
+      console.error('Ошибка при удалении элемента из корзины:', error);
+      
+      message.success('Ошибка удаления товара из корзины!');
+
+    }
+  };
+
 
   const CartItem = ({ item, onIncreaseQuantity, onDecreaseQuantity, menuItems }) => {
     const { menuItemId, quantity, size } = item;
@@ -223,6 +241,9 @@ const handleDeliveryMethodChange = (e) => {
         <Button type="primary" onClick={() => onDecreaseQuantity(item)}>-</Button>
         <Text style={{ margin: '0 10px' }}>{quantity}</Text>
         <Button type="primary" onClick={() => onIncreaseQuantity(item)}>+</Button>
+        <Button type="danger" style={{ marginLeft: '10px' }} onClick={() => onDeleteItem(item)}>
+          Удалить
+        </Button>
       </div>
     );
   };
@@ -231,7 +252,6 @@ const handleDeliveryMethodChange = (e) => {
   
 
   const handleIncreaseQuantity = (item) => {
-    console.log(item.id);
     middleware.incrementCartItemQuantity(item.id);
 
     const updatedCartItems = cartItems.map((cartItem) => {
@@ -261,13 +281,26 @@ const handleDeliveryMethodChange = (e) => {
   const handleCheckout = async () => {
     const totalPrice = 100; // Рассчитываем общую стоимость заказа
     try {
-      // Отправляем заказ на сервер
       const response = await middleware.sendOrderToServer(totalPrice, paymentMethod, deliveryMethod);
       console.log('Order sent successfully:', response);
-      // Очищаем корзину после успешного оформления заказа
-      // Здесь можно вызвать функцию для очистки корзины, если она доступна из этого компонента
+      
+      const items = await middleware.getCartItemsByUserId();
+      setCartItems(items);
+
+      if(cartItems.length===1){
+        console.log(cartItems.length);
+        message.success('Заказ успешно сформирован и отобразится у вас в профиле!');
+        setIsCartOpen(false);
+      }
+      else{
+        
+        console.log(cartItems.length);
+        message.error('у вас уже есть активный заказ!');
+      }
+      
     } catch (error) {
       console.error('Error while sending order:', error);
+      message.error('Ошибка при формировании заказа!');
     }
   };
 
@@ -317,6 +350,7 @@ const handleDeliveryMethodChange = (e) => {
         <div ref={drinksRef}>
           <Menu_comp pizzas={getFilteredMenuItems(filteredMenuItems,'Напитки')} menuName={'Напитки'} />
         </div>
+
         <Footer_comp></Footer_comp>
       </Content>
       <Modal
@@ -350,56 +384,63 @@ const handleDeliveryMethodChange = (e) => {
         />
       </Modal>
       <Modal
-title="Корзина"
-visible={isCartOpen}
-onCancel={handleCartClose}
-footer={[
-<Button key="orderButton" type="primary" onClick={handleCheckout}>
-Оформить заказ
-</Button>,
-]}
+  title="Корзина"
+  visible={isCartOpen}
+  onCancel={handleCartClose}
+  footer={
+    cartItems.length > 0 ? (
+      [
+        <Button key="orderButton" type="primary" onClick={handleCheckout}>
+          Оформить заказ
+        </Button>,
+      ]
+    ) : null
+  }
 >
-{cartItems.length === 0 ? (
-<p>Корзина пуста</p>
-) : (
-<>
-<List
-  dataSource={cartItems}
-  renderItem={(item) => (
-    <List.Item>
-      <CartItem 
-        item={item} 
-        onIncreaseQuantity={handleIncreaseQuantity} 
-        onDecreaseQuantity={handleDecreaseQuantity} 
-        menuItems={menuItems} // Добавлено здесь
+  {cartItems.length === 0 ? (
+    <div style={{ textAlign: 'center', padding: '20px 0' }}>
+      <h3>Корзина пуста</h3>
+      <p>Добавьте товары, чтобы сделать заказ.</p>
+    </div>
+  ) : (
+    <>
+      <List
+        dataSource={cartItems}
+        renderItem={(item) => (
+          <List.Item>
+            <CartItem
+              item={item}
+              onIncreaseQuantity={handleIncreaseQuantity}
+              onDecreaseQuantity={handleDecreaseQuantity}
+              menuItems={menuItems} // Добавлено здесь
+            />
+          </List.Item>
+        )}
       />
-    </List.Item>
+      <Divider />
+      <div>
+        <h3>Способ оплаты</h3>
+        <Radio.Group value={paymentMethod} onChange={handlePaymentMethodChange}>
+          <Radio value="card">Картой курьеру</Radio>
+          <Radio value="cash">Наличные</Radio>
+        </Radio.Group>
+      </div>
+      <Divider />
+      <div>
+        <h3>Способ доставки</h3>
+        <Radio.Group value={deliveryMethod} onChange={handleDeliveryMethodChange}>
+          <Radio value="pickup">Самовывоз</Radio>
+          <Radio value="delivery">Доставка</Radio>
+        </Radio.Group>
+        {deliveryMethod === 'pickup' && (
+          <div>
+            <Divider />
+            <h3>Адрес: Ул. ленина д.13</h3>
+          </div>
+        )}
+      </div>
+    </>
   )}
-/>
-<Divider />
-<div>
-<h3>Способ оплаты</h3>
-<Radio.Group value={paymentMethod} onChange={handlePaymentMethodChange}>
-<Radio value="card">Картой курьеру</Radio>
-<Radio value="cash">Наличные</Radio>
-</Radio.Group>
-</div>
-<Divider />
-<div>
-<h3>Способ доставки</h3>
-<Radio.Group value={deliveryMethod} onChange={handleDeliveryMethodChange}>
-<Radio value="pickup">Самовывоз</Radio>
-<Radio value="delivery">Доставка</Radio>
-</Radio.Group>
-{deliveryMethod === 'pickup' && (
-<div>
-<Divider />
-<h3>Адрес: Ул. ленина д.13</h3>
-</div>
-)}
-</div>
-</>
-)}
 </Modal>
     </Layout>
   );

@@ -526,4 +526,29 @@ async function updateOrderStatus(id, newStatus) {
   }
 }
 
-  export default {updateOrderStatus,fetchAllOrders,updateUserData,updatePassword,verifyRecoveryCode,sendRecoveryCode,incrementCartItemQuantity,decrementCartItemQuantity,registerUser,loginUser,fetchMenuItems,fetchUserInfo,getAllOrdersByUserId,getAllInProcessByUserId,cancelOrder,addItemToCart,getCartItemsByUserId,hasJWT, sendOrderToServer}
+async function deleteCartItem(cartItemId) {
+  try {
+    const jwt = localStorage.getItem('jwt');
+
+    const response = await fetch('http://localhost:5000/api/cart/DeleteOne', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${jwt}`
+      },
+      body: JSON.stringify({ cartItemId })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log(data.message); // Успешное сообщение об удалении
+    } else {
+      const error = await response.json();
+      console.error(error.message); // Сообщение об ошибке
+    }
+  } catch (error) {
+    console.error('Ошибка при удалении элемента из корзины:', error);
+  }
+}
+
+  export default {deleteCartItem,updateOrderStatus,fetchAllOrders,updateUserData,updatePassword,verifyRecoveryCode,sendRecoveryCode,incrementCartItemQuantity,decrementCartItemQuantity,registerUser,loginUser,fetchMenuItems,fetchUserInfo,getAllOrdersByUserId,getAllInProcessByUserId,cancelOrder,addItemToCart,getCartItemsByUserId,hasJWT, sendOrderToServer}

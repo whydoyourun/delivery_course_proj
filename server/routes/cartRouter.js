@@ -8,7 +8,7 @@ router.post('/', cartController.addCart);
 router.post('/addOne',AuthCheckMiddleware, cartController.addItemInCart);
 router.post('/IncrementOne',AuthCheckMiddleware, cartController.incrementCartItemQuantity);
 router.post('/DecrementOne',AuthCheckMiddleware, cartController.decrementCartItemQuantity);
-//router.get('/:userId', cartController.getCartByUserId);  ломается по имени если разкоментить
+router.post('/DeleteOne',AuthCheckMiddleware, cartController.deleteCartItem);
 router.get('/items/:cartId', cartController.getItemsByCartId);
 router.get('/itemsByUserId',AuthCheckMiddleware,cartController.getCartItemsByUserId);
 router.delete('/:cartId', cartController.deleteCart);

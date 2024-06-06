@@ -146,6 +146,7 @@ async getCartItemsByUserId(req, res, next) {
 // Метод для увеличения количества товара в корзине
 async incrementCartItemQuantity(req, res, next) {
   try {
+
     const userId = req.user.id;
     const menuItemId = req.body.menuItemId;
 
@@ -156,7 +157,7 @@ async incrementCartItemQuantity(req, res, next) {
     const cartItem = await CartItem.findOne({
       where: {
         cartId: cart.id,
-        menuItemId
+        id: menuItemId
       }
     });
 
@@ -183,7 +184,7 @@ async decrementCartItemQuantity(req, res, next) {
     const cartItem = await CartItem.findOne({
       where: {
         cartId: cart.id,
-        menuItemId
+        id: menuItemId
       }
     });
 
@@ -199,6 +200,34 @@ async decrementCartItemQuantity(req, res, next) {
   }
 }
 
+
+async deleteCartItem(req, res, next) {
+  try {
+    const userId = req.user.id;
+    const cartItemId = req.body.cartItemId;
+
+    // Находим корзину пользователя
+    const cart = await Cart.findOne({ where: { userId } });
+
+    // Находим элемент корзины по id
+    const cartItem = await CartItem.findOne({
+      where: {
+        id: cartItemId,
+        cartId: cart.id
+      }
+    });
+
+    // Если элемент корзины найден, удаляем его
+    if (cartItem) {
+      await cartItem.destroy();
+      return res.json({ message: 'Товар успешно удален из корзины' });
+    } else {
+      return res.status(404).json({ message: 'Товар не найден в корзине' });
+    }
+  } catch (error) {
+    next(ApiError.internal('Непредвиденная ошибка сервера: ' + error.message));
+  }
+}
 
 }
 
