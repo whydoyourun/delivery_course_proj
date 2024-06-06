@@ -350,7 +350,7 @@ const handleDeliveryMethodChange = (e) => {
         <div ref={drinksRef}>
           <Menu_comp pizzas={getFilteredMenuItems(filteredMenuItems,'Напитки')} menuName={'Напитки'} />
         </div>
-
+<ChatWidget></ChatWidget>
         <Footer_comp></Footer_comp>
       </Content>
       <Modal

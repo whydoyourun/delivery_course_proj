@@ -1,58 +1,22 @@
 import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
 import { Button, Form, Input, InputNumber, Layout, Menu, Modal, Table, notification } from 'antd';
 import React, { useEffect, useState } from 'react';
+import middleware from '../middleware/middleware';
 
 const { Content, Sider } = Layout;
 
 const AdminMenuPage = () => {
-  const [data, setData] = useState([
-    {
-      id: 1,
-      name: 'Бургер с сыром',
-      description: 'Бургер с котлетой, сыром и соусами',
-      price_normal: 5.99,
-      price_large: 7.99,
-      category: 'Бургеры'
-    },
-    {
-      id: 2,
-      name: 'Салат Цезарь',
-      description: 'Салат с курицей, пармезаном и фирменным соусом',
-      price_normal: 8.99,
-      price_large: 10.99,
-      category: 'Салаты'
-    },
-    {
-      id: 3,
-      name: 'Пицца Маргарита',
-      description: 'Тонкая пицца с соусом, моцареллой и базиликом',
-      price_normal: 12.99,
-      price_large: 15.99,
-      category: 'Пицца'
-    },
-    {
-      id: 4,
-      name: 'Куриные крылышки',
-      description: 'Острые куриные крылышки с соусом барбекю',
-      price_normal: 7.99,
-      price_large: 11.99,
-      category: 'Закуски'
-    },
-    {
-      id: 5,
-      name: 'Паста Карбонара',
-      description: 'Паста с беконом, сливками и пармезаном',
-      price_normal: 9.99,
-      price_large: 12.99,
-      category: 'Паста'
-    }
-  ]);
+  const [data, setData] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [form] = Form.useForm();
 
   useEffect(() => {
-    // Можно загружать данные из базы данных здесь
+    const fetchData = async () => {
+      const fetchedMenuItems = await middleware.fetchMenuItems();
+      setData(fetchedMenuItems);
+    };
+    fetchData();
   }, []);
 
   const columns = [
@@ -61,6 +25,7 @@ const AdminMenuPage = () => {
     { title: 'Normal Price', dataIndex: 'price_normal', key: 'price_normal' },
     { title: 'Large Price', dataIndex: 'price_large', key: 'price_large' },
     { title: 'Category', dataIndex: 'category', key: 'category' },
+    { title: 'Image', dataIndex: 'image', key: 'image' },
     {
       title: 'Actions',
       key: 'actions',
@@ -123,12 +88,7 @@ const AdminMenuPage = () => {
   };
 
   return (
-    <Layout>
-      <Sider width={200} className="site-layout-background">
-        <Menu mode="inline" defaultSelectedKeys={['menu']}>
-          <Menu.Item key="menu">Menu</Menu.Item>
-        </Menu>
-      </Sider>
+
       <Layout style={{ padding: '0 24px 24px' }}>
         <Content
           className="site-layout-background"
@@ -187,11 +147,17 @@ const AdminMenuPage = () => {
               >
                 <Input />
               </Form.Item>
+              <Form.Item
+                name="image"
+                label="Image"
+                rules={[{ required: true, message: 'Please input link to image!' }]}
+              >
+                <Input />
+              </Form.Item>
             </Form>
           </Modal>
         </Content>
       </Layout>
-    </Layout>
   );
 };
 
