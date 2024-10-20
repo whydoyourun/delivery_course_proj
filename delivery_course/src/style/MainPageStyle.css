@@ -1,0 +1,43 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box; /* Рекомендуется, чтобы размеры элементов учитывали padding и border */
+}
+
+.custom-menu {
+  background-color: #ffcc00; /* ваш цвет фона */
+  border: none; /* убираем границы, если нужно */
+  position: fixed;
+  width: 100%;
+  margin: 0px;
+  z-index: 1000;
+  padding: 0px 50px 0px 50px;
+}
+
+.custom-menu .ant-menu-item {
+  color: #333; /* цвет текста */
+}
+
+.custom-menu .ant-menu-item:hover {
+  background-color: #e6b800; /* цвет при наведении */
+}
+
+.ant-layout-header {
+  background-color: #ffcc00;
+}
+
+.mainPageContent {
+  padding-top: 0px;
+}
+
+.mainNav {
+  position: absolute;
+  width: 100%;
+  background-color: #ffcc00;
+  padding: 0px 50px 0px 50px;
+}
+
+.main-header {
+  height: 200px;
+  margin: 0px;
+}

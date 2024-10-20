@@ -1,0 +1,16 @@
+.header {
+  background-color: #ffcc00; /* Цвет фона */
+  padding: 20px;
+  text-align: center;
+  margin: 0px;
+}
+
+.logo {
+  font-size: 2em;
+  font-weight: bold;
+}
+
+.tagline {
+  font-size: 1.2em;
+  margin: 10px 0;
+}

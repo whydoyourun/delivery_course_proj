@@ -1,11 +1,11 @@
-import { Button, Input, Modal, Form, message } from 'antd';
-import React, { useState } from 'react';
-import middleware from '../middleware/middleware';
+import { Button, Input, Modal, Form, message } from "antd";
+import React, { useState } from "react";
+import middleware from "../middleware/middleware";
 
 const ForgotPasswordModal = ({ visible, onCancel }) => {
-  const [email, setEmail] = useState('');
-  const [secretCode, setSecretCode] = useState('');
-  const [newPassword, setNewPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [secretCode, setSecretCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [isSentEmail, setIsSentEmail] = useState(false);
   const [showNewPasswordForm, setShowNewPasswordForm] = useState(false);
   const [isSecretCodeValid, setIsSecretCodeValid] = useState(true);
@@ -18,23 +18,23 @@ const ForgotPasswordModal = ({ visible, onCancel }) => {
   const handleVerifyCode = async () => {
     try {
       const response = await middleware.verifyRecoveryCode(email, secretCode);
-      if (response.message === 'Успешно введен секретный код') {
+      if (response.message === "Успешно введен секретный код") {
         setIsSecretCodeValid(true);
         setShowNewPasswordForm(true);
       } else {
         setIsSecretCodeValid(false);
       }
     } catch (error) {
-      console.error('Error verifying recovery code:', error);
+      console.error("Error verifying recovery code:", error);
     }
   };
   const handleSaveNewPassword = async () => {
     try {
       await middleware.updatePassword(email, newPassword);
-      message.success('Пароль успешно изменен!');
+      message.success("Пароль успешно изменен!");
       onCancel();
     } catch (error) {
-      console.error('Error updating password:', error.message);
+      console.error("Error updating password:", error.message);
       // Обработка ошибки, если что-то пошло не так при обновлении пароля
     }
   };
@@ -50,31 +50,45 @@ const ForgotPasswordModal = ({ visible, onCancel }) => {
       {!isSentEmail ? (
         <>
           <h2>Забыли пароль?</h2>
-          <p>Введите ваш email, и мы отправим вам инструкции по восстановлению пароля.</p>
+          <p>
+            Введите ваш email, и мы отправим вам инструкции по восстановлению
+            пароля.
+          </p>
           <Input
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="login-modal-item"
           />
-          <Button type="primary" onClick={handleSubmit} className="login-modal-item">
+          <Button
+            type="primary"
+            onClick={handleSubmit}
+            className="login-modal-item"
+          >
             Отправить
           </Button>
         </>
       ) : !showNewPasswordForm ? (
         <>
           <h2>Введите секретный код</h2>
-          <p>Мы отправили код на ваш email. Введите его ниже, чтобы восстановить пароль.</p>
+          <p>
+            Мы отправили код на ваш email. Введите его ниже, чтобы восстановить
+            пароль.
+          </p>
           <Input
             placeholder="Секретный код"
             value={secretCode}
             onChange={(e) => setSecretCode(e.target.value)}
-            className={`login-modal-item ${!isSecretCodeValid ? 'error' : ''}`}
+            className={`login-modal-item ${!isSecretCodeValid ? "error" : ""}`}
           />
           {!isSecretCodeValid && (
             <p className="error-message">Неверный секретный код</p>
           )}
-          <Button type="primary" onClick={handleVerifyCode} className="login-modal-item">
+          <Button
+            type="primary"
+            onClick={handleVerifyCode}
+            className="login-modal-item"
+          >
             Подтвердить
           </Button>
         </>
@@ -85,7 +99,9 @@ const ForgotPasswordModal = ({ visible, onCancel }) => {
             <Form.Item
               label="Новый пароль"
               name="newPassword"
-              rules={[{ required: true, message: 'Пожалуйста, введите новый пароль' }]}
+              rules={[
+                { required: true, message: "Пожалуйста, введите новый пароль" },
+              ]}
             >
               <Input.Password
                 value={newPassword}
@@ -93,7 +109,12 @@ const ForgotPasswordModal = ({ visible, onCancel }) => {
               />
             </Form.Item>
             <Form.Item>
-              <Button type="primary" htmlType="submit" className="login-modal-item" onClick={handleSaveNewPassword}>
+              <Button
+                type="primary"
+                htmlType="submit"
+                className="login-modal-item"
+                onClick={handleSaveNewPassword}
+              >
                 Сохранить
               </Button>
             </Form.Item>
@@ -121,10 +142,7 @@ const LoginModule = () => {
       <Button onClick={toggleModal} className="login-button">
         Войти
       </Button>
-      <p
-        onClick={toggleForgotPasswordModal}
-        className="forgot-password-link"
-      >
+      <p onClick={toggleForgotPasswordModal} className="forgot-password-link">
         Забыли пароль?
       </p>
       {showForgotPasswordModal && (
@@ -137,4 +155,4 @@ const LoginModule = () => {
   );
 };
 
-export default ForgotPasswordModal
+export default ForgotPasswordModal;
